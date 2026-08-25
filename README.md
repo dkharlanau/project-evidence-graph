@@ -49,6 +49,18 @@ A lightweight project knowledge/evidence layer that sits across GitHub, Jira, SA
 - vendor-neutral where practical
 - interoperable with enterprise tools
 
+## Related projects
+
+- [Mapping as Code](https://github.com/dkharlanau/mapping-as-code)
+- [Transformation Graph](https://github.com/dkharlanau/transformation-graph)
+- [Interface as Code](https://github.com/dkharlanau/interface-as-code)
+- [Reconciliation as Code](https://github.com/dkharlanau/reconciliation-as-code)
+- [Process as Code](https://github.com/dkharlanau/process-as-code)
+- [Enterprise Change Graph](https://github.com/dkharlanau/enterprise-change-graph)
+- [Decision Tables as Code](https://github.com/dkharlanau/decision-tables-as-code)
+- [Data Relationship Map](https://github.com/dkharlanau/data-relationship-map)
+- [Cutover Graph](https://github.com/dkharlanau/cutover-graph)
+
 ## Status
 
 Planning.
