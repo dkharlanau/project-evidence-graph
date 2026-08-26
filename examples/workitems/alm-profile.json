@@ -1,0 +1,25 @@
+{
+  "source": "cloud-alm",
+  "project_name": "CUSTOMER-TRANSFORMATION",
+  "items_path": "work_items",
+  "id": "id",
+  "tracker_type": "type",
+  "title": "title",
+  "status": "status",
+  "risk": "risk",
+  "updated_at": "updated_at",
+  "url": "url",
+  "type_map": {
+    "requirement": "requirement",
+    "test": "test",
+    "defect": "defect",
+    "change": "change"
+  },
+  "default_artifact_type": "change",
+  "links": {
+    "path": "links",
+    "target": "target",
+    "type": "relation",
+    "direction": "outward"
+  }
+}
