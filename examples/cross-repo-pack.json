@@ -1,0 +1,35 @@
+{
+  "nodes": [
+    {"id": "REQ-COUNTRY", "type": "requirement", "risk": "high", "title": "Customer country must replicate consistently"},
+    {"id": "TEST-COUNTRY", "type": "test", "title": "Customer country integration test"},
+    {"id": "EVID-COUNTRY", "type": "evidence", "title": "Regression evidence", "observed_at": "2026-08-24T10:00:00Z"}
+  ],
+  "external_artifacts": [
+    {
+      "ref": "eac://dkharlanau/mapping-as-code/mapping/customer/country?version=v3",
+      "type": "mapping",
+      "title": "Customer country mapping",
+      "source": {
+        "repository": "dkharlanau/mapping-as-code",
+        "path": "examples/customer-country.yaml",
+        "revision": "example-revision"
+      }
+    },
+    {
+      "ref": "eac://dkharlanau/interface-as-code/interface/mdg-s4/customer?version=v2",
+      "type": "interface",
+      "title": "MDG to S4 customer interface",
+      "source": {
+        "repository": "dkharlanau/interface-as-code",
+        "path": "examples/mdg-s4-customer.json",
+        "revision": "example-revision"
+      }
+    }
+  ],
+  "links": [
+    {"from": "REQ-COUNTRY", "to_ref": "eac://dkharlanau/mapping-as-code/mapping/customer/country?version=v3", "type": "implemented_by"},
+    {"from_ref": "eac://dkharlanau/mapping-as-code/mapping/customer/country?version=v3", "to_ref": "eac://dkharlanau/interface-as-code/interface/mdg-s4/customer?version=v2", "type": "used_by"},
+    {"from_ref": "eac://dkharlanau/interface-as-code/interface/mdg-s4/customer?version=v2", "to": "TEST-COUNTRY", "type": "verified_by"},
+    {"from": "TEST-COUNTRY", "to": "EVID-COUNTRY", "type": "produced"}
+  ]
+}
