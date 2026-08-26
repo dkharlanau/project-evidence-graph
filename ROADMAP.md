@@ -5,21 +5,22 @@
 - canonical project artifact/link model
 - validation for duplicates, broken links, and artifact types
 - directed path tracing
+- upstream/downstream impact analysis
 - requirement-to-test and requirement-to-evidence coverage
 - generated traceability-matrix data
 - policy-based quality gates for CI
+- generic CSV import with file/row provenance
 - reusable zero-build browser graph explorer
-- realistic traceability-gap example
+- realistic traceability-gap examples
 - unit tests and GitHub Actions CI
 
-## Now — ingest real project evidence
+## Now — ingest richer project evidence
 
-1. Add generic CSV importer for requirements/tests/defects/changes.
-2. Add GitHub Issues/PR export adapter.
-3. Preserve provenance and source references on imported artifacts.
-4. Add reverse impact analysis from change/interface/test to upstream requirements.
-5. Add evidence freshness and stale-evidence detection.
-6. Generate Markdown/HTML traceability reports as build artifacts.
+1. Add GitHub Issues/PR export adapter.
+2. Add Jira/ALM export profiles on top of the generic importer.
+3. Add evidence freshness and stale-evidence detection.
+4. Add risk-weighted coverage and quality policy profiles.
+5. Generate Markdown/HTML traceability and audit reports.
 
 ## Next — cross-repository project spine
 
@@ -33,14 +34,13 @@
 
 ## Later — operational assurance
 
-- risk-weighted coverage instead of only raw percentages
-- configurable project/release policy profiles
 - signed or hashed evidence references
 - historical graph snapshots and rationale drift
 - project-level assurance cases and audit exports
+- cross-project policy packs
 
 ## Product test
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, where is it implemented, how was it tested, what changed, and what evidence proves the current state?
+> Why does this exist, what is upstream/downstream of it, where is it implemented, how was it tested, and what evidence proves the current state?
