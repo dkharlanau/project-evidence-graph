@@ -35,6 +35,9 @@ jobs:
       - run: python evidence_graph.py /tmp/jira-evidence.json analyze
       - run: python workitem_adapter.py examples/workitems/alm-export.json --profile examples/workitems/alm-profile.json --output /tmp/alm-evidence.json
       - run: python evidence_graph.py /tmp/alm-evidence.json analyze
+      - run: python reconciliation_adapter.py examples/reconciliation/evidence.json --output /tmp/reconciliation-evidence.json
+      - run: python evidence_graph.py /tmp/reconciliation-evidence.json analyze
+      - run: python evidence_freshness.py /tmp/reconciliation-evidence.json examples/freshness-policy.json
       - run: python cross_repo.py examples/cross-repo-pack.json --output /tmp/cross-repo-evidence.json
       - run: python evidence_graph.py /tmp/cross-repo-evidence.json analyze
       - run: python evidence_graph.py /tmp/cross-repo-evidence.json path REQ-COUNTRY EVID-COUNTRY
