@@ -22,21 +22,23 @@
 - stable reconciliation run/check `eac://` references and preserved fingerprints
 - stable `eac://` cross-repository artifact materialization
 - explicit local<->external and external<->external traceability links
-- cross-repository invalid/duplicate/unresolved reference diagnostics
+- deterministic graph-fragment merge with explicit bridge links
+- cross-repository invalid/duplicate/conflict/unresolved diagnostics
 - consolidated Markdown/HTML project assurance review
 - one explicit review decision across supplied quality/freshness/risk policy gates
 - compact bounded project context for agents
 - deterministic `context_id` for reproducible context slices
+- integrity-verifiable bounded release/cutover evidence packs
+- deterministic `pack_id`, per-file SHA-256 manifest, and pack verification
 - reusable zero-build browser graph explorer
 - realistic traceability/freshness/risk/external-work-item/reconciliation/cross-repository examples
 - unit tests and GitHub Actions CI
 
-## Now — evidence packs and cutover integration
+## Now — cutover and domain emitters
 
-1. Generate release and cutover evidence packs from bounded graph slices.
-2. Ingest Cutover Graph tasks/checkpoints/evidence by stable refs.
-3. Emit stable `eac://` refs from more domain repos so project packs need less manual linking.
-4. Add a deterministic graph-fragment merge layer for imported domain evidence and project bridge links.
+1. Ingest Cutover Graph tasks/checkpoints/evidence by stable refs.
+2. Emit stable `eac://` refs directly from Cutover Graph and Data Relationship Map.
+3. Connect Reconciliation-as-Code evidence refs into Cutover Graph checkpoints without duplicating evidence content.
 
 ## Next — historical assurance
 
@@ -44,10 +46,11 @@
 - assurance trend between releases
 - changed requirement -> changed implementation -> required retest analysis
 - explicit supersedes/replaces relationships for evidence and decisions
+- compare evidence packs/release decisions across rehearsals and production
 
 ## Later — operational assurance
 
-- signed or hashed evidence references
+- signed or externally attested evidence-pack manifests
 - project-level assurance cases and audit exports
 - cross-project policy packs
 - external evidence stores and verification adapters
@@ -56,4 +59,4 @@
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, can that state be reviewed in one reproducible release artifact, and can an agent receive a bounded context package that identifies exactly which project state it consumed?
+> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, can that state be reviewed and integrity-checked in one bounded release pack, and can an agent receive a reproducible context package that identifies exactly which project state it consumed?
