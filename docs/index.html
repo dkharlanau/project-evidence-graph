@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Enterprise Graph Explorer</title>
+  <style>
+    :root { color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: Canvas; color: CanvasText; }
+    header { padding: 28px 32px 18px; border-bottom: 1px solid color-mix(in srgb, CanvasText 14%, transparent); }
+    h1 { margin: 0 0 6px; font-size: clamp(24px, 4vw, 42px); letter-spacing: -0.04em; }
+    header p { margin: 0; opacity: .68; max-width: 760px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; padding: 16px 32px; border-bottom: 1px solid color-mix(in srgb, CanvasText 12%, transparent); }
+    button, input { font: inherit; }
+    button, .file-label, input[type="search"] { border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); background: Canvas; color: CanvasText; border-radius: 999px; padding: 9px 14px; }
+    button, .file-label { cursor: pointer; }
+    input[type="file"] { display: none; }
+    input[type="search"] { min-width: 240px; flex: 1 1 260px; }
+    .stats { display: flex; gap: 20px; padding: 14px 32px; font-size: 13px; opacity: .72; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; min-height: 640px; }
+    #stage { overflow: auto; min-height: 640px; background-image: radial-gradient(color-mix(in srgb, CanvasText 10%, transparent) 1px, transparent 1px); background-size: 20px 20px; }
+    svg { min-width: 100%; min-height: 640px; }
+    .edge { stroke: color-mix(in srgb, CanvasText 24%, transparent); stroke-width: 1.4; fill: none; }
+    .node rect { fill: Canvas; stroke: color-mix(in srgb, CanvasText 30%, transparent); stroke-width: 1.4; rx: 9; }
+    .node text { fill: CanvasText; font-size: 12px; pointer-events: none; }
+    .node .kind { font-size: 9px; opacity: .56; text-transform: uppercase; letter-spacing: .08em; }
+    .node { cursor: pointer; transition: opacity .15s ease; }
+    .node.dim { opacity: .14; }
+    .node.selected rect { stroke-width: 3; }
+    aside { border-left: 1px solid color-mix(in srgb, CanvasText 12%, transparent); padding: 22px; overflow: auto; }
+    aside h2 { margin: 0 0 12px; font-size: 16px; }
+    aside pre { white-space: pre-wrap; word-break: break-word; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; opacity: .82; }
+    .hint { opacity: .6; font-size: 13px; line-height: 1.5; }
+    @media (max-width: 820px) { main { grid-template-columns: 1fr; } aside { border-left: 0; border-top: 1px solid color-mix(in srgb, CanvasText 12%, transparent); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Enterprise Graph Explorer</h1>
+    <p>Open a Project Evidence Graph, Data Relationship Map, or Cutover Graph JSON file. Everything runs locally in the browser.</p>
+  </header>
+  <div class="toolbar">
+    <label class="file-label">Open JSON<input id="file" type="file" accept="application/json,.json" /></label>
+    <button id="sample">Load sample</button>
+    <input id="search" type="search" placeholder="Filter by ID, type, system, owner…" />
+  </div>
+  <div class="stats"><span id="modelType">No model loaded</span><span id="nodeCount">0 nodes</span><span id="edgeCount">0 edges</span></div>
+  <main>
+    <section id="stage"><svg id="graph" role="img" aria-label="Enterprise graph"></svg></section>
+    <aside><h2>Selection</h2><div id="details" class="hint">Load a model, then select a node to inspect its metadata and connections.</div></aside>
+  </main>
+<script>
+const sample = {
+  nodes: [
+    {id:'REQ-001',type:'requirement',title:'Replicate customer country consistently'},
+    {id:'DEC-001',type:'decision',title:'Use canonical ISO country code'},
+    {id:'MAP-001',type:'mapping',title:'Legacy country to S/4 country'},
+    {id:'IF-001',type:'interface',title:'MDG to S/4 customer replication'},
+    {id:'TEST-001',type:'test',title:'Country replication test'},
+    {id:'EVID-001',type:'evidence',title:'Successful regression run'}
+  ],
+  links: [
+    {from:'REQ-001',to:'DEC-001',type:'resolved_by'},
+    {from:'DEC-001',to:'MAP-001',type:'implemented_by'},
+    {from:'MAP-001',to:'IF-001',type:'used_by'},
+    {from:'IF-001',to:'TEST-001',type:'verified_by'},
+    {from:'TEST-001',to:'EVID-001',type:'produced'}
+  ]
+};
+
+let current = {nodes:[], edges:[], kind:'unknown'};
+const svg = document.getElementById('graph');
+const details = document.getElementById('details');
+const search = document.getElementById('search');
+const NS = 'http://www.w3.org/2000/svg';
+
+function normalize(model) {
+  if (Array.isArray(model.tasks)) {
+    const nodes = model.tasks.map(t => ({...t, id:String(t.id), type:'task'}));
+    const edges = [];
+    nodes.forEach(t => (t.depends_on || []).forEach(dep => edges.push({from:String(dep),to:t.id,type:'depends_on'})));
+    return {nodes, edges, kind:'Cutover Graph'};
+  }
+  if (Array.isArray(model.nodes) && Array.isArray(model.relationships)) return {nodes:model.nodes, edges:model.relationships, kind:'Data Relationship Map'};
+  if (Array.isArray(model.nodes) && Array.isArray(model.links)) return {nodes:model.nodes, edges:model.links, kind:'Project Evidence Graph'};
+  throw new Error('Unsupported model. Expected nodes+links, nodes+relationships, or tasks.');
+}
+
+function groupKey(node) { return node.type || node.system || node.object || 'other'; }
+function label(node) { return node.title || node.label || node.id; }
+function trim(text, n=25) { text=String(text || ''); return text.length > n ? text.slice(0,n-1)+'…' : text; }
+
+function render() {
+  svg.replaceChildren();
+  const nodes = current.nodes.map(n => ({...n, id:String(n.id)}));
+  const byId = new Map(nodes.map(n => [n.id,n]));
+  const edges = current.edges.filter(e => byId.has(String(e.from)) && byId.has(String(e.to)));
+  const groups = [...new Set(nodes.map(groupKey))].sort();
+  const bucket = new Map(groups.map(g => [g, []]));
+  nodes.forEach(n => bucket.get(groupKey(n)).push(n));
+  bucket.forEach(v => v.sort((a,b)=>a.id.localeCompare(b.id)));
+
+  const colW=210, rowH=82, marginX=40, marginY=55, nodeW=166, nodeH=48;
+  const positions = new Map();
+  let maxRows=1;
+  groups.forEach((g,gi) => {
+    const list=bucket.get(g); maxRows=Math.max(maxRows,list.length);
+    list.forEach((n,ri)=>positions.set(n.id,{x:marginX+gi*colW,y:marginY+ri*rowH}));
+  });
+  const width=Math.max(760, marginX*2+Math.max(1,groups.length)*colW);
+  const height=Math.max(640, marginY*2+maxRows*rowH);
+  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+  svg.style.width=width+'px'; svg.style.height=height+'px';
+
+  groups.forEach((g,gi) => {
+    const t=document.createElementNS(NS,'text'); t.setAttribute('x',marginX+gi*colW); t.setAttribute('y',25); t.setAttribute('fill','currentColor'); t.setAttribute('font-size','11'); t.setAttribute('opacity','.55'); t.textContent=g.toUpperCase(); svg.appendChild(t);
+  });
+
+  edges.forEach(e => {
+    const a=positions.get(String(e.from)), b=positions.get(String(e.to));
+    const p=document.createElementNS(NS,'path'); p.setAttribute('class','edge');
+    const x1=a.x+nodeW, y1=a.y+nodeH/2, x2=b.x, y2=b.y+nodeH/2, bend=Math.max(24,Math.abs(x2-x1)*.38);
+    p.setAttribute('d',`M${x1},${y1} C${x1+bend},${y1} ${x2-bend},${y2} ${x2},${y2}`); p.dataset.from=String(e.from); p.dataset.to=String(e.to); svg.appendChild(p);
+  });
+
+  nodes.forEach(n => {
+    const pos=positions.get(n.id), g=document.createElementNS(NS,'g'); g.setAttribute('class','node'); g.setAttribute('transform',`translate(${pos.x},${pos.y})`); g.dataset.id=n.id;
+    const rect=document.createElementNS(NS,'rect'); rect.setAttribute('width',nodeW); rect.setAttribute('height',nodeH); g.appendChild(rect);
+    const kind=document.createElementNS(NS,'text'); kind.setAttribute('class','kind'); kind.setAttribute('x','10'); kind.setAttribute('y','15'); kind.textContent=groupKey(n); g.appendChild(kind);
+    const text=document.createElementNS(NS,'text'); text.setAttribute('x','10'); text.setAttribute('y','34'); text.textContent=trim(label(n)); g.appendChild(text);
+    g.addEventListener('click',()=>selectNode(n.id)); svg.appendChild(g);
+  });
+
+  document.getElementById('modelType').textContent=current.kind;
+  document.getElementById('nodeCount').textContent=`${nodes.length} nodes`;
+  document.getElementById('edgeCount').textContent=`${edges.length} edges`;
+  applyFilter();
+}
+
+function selectNode(id) {
+  const node=current.nodes.find(n=>String(n.id)===id); if(!node) return;
+  document.querySelectorAll('.node').forEach(el=>el.classList.toggle('selected',el.dataset.id===id));
+  const connected=current.edges.filter(e=>String(e.from)===id || String(e.to)===id);
+  details.innerHTML='';
+  const pre=document.createElement('pre'); pre.textContent=JSON.stringify({node,connections:connected},null,2); details.appendChild(pre);
+}
+
+function applyFilter() {
+  const q=search.value.trim().toLowerCase();
+  document.querySelectorAll('.node').forEach(el => {
+    const node=current.nodes.find(n=>String(n.id)===el.dataset.id); const text=JSON.stringify(node).toLowerCase(); el.classList.toggle('dim',!!q && !text.includes(q));
+  });
+}
+
+async function load(model) {
+  try { current=normalize(model); details.textContent='Select a node to inspect metadata and connections.'; render(); }
+  catch(err) { details.textContent=err.message; }
+}
+
+document.getElementById('sample').addEventListener('click',()=>load(sample));
+document.getElementById('file').addEventListener('change', async e => {
+  const file=e.target.files[0]; if(!file) return;
+  try { await load(JSON.parse(await file.text())); } catch(err) { details.textContent='Invalid JSON: '+err.message; }
+});
+search.addEventListener('input',applyFilter);
+load(sample);
+</script>
+</body>
+</html>
