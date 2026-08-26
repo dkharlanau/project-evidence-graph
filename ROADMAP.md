@@ -10,17 +10,17 @@
 - generated traceability-matrix data
 - policy-based quality gates for CI
 - generic CSV import with file/row provenance
+- GitHub Issues/PR JSON import with explicit-reference traceability and unresolved-reference diagnostics
 - reusable zero-build browser graph explorer
 - realistic traceability-gap examples
 - unit tests and GitHub Actions CI
 
 ## Now — ingest richer project evidence
 
-1. Add GitHub Issues/PR export adapter.
-2. Add Jira/ALM export profiles on top of the generic importer.
-3. Add evidence freshness and stale-evidence detection.
-4. Add risk-weighted coverage and quality policy profiles.
-5. Generate Markdown/HTML traceability and audit reports.
+1. Add Jira/ALM export profiles on top of the generic importer.
+2. Add evidence freshness and stale-evidence detection.
+3. Add risk-weighted coverage and quality policy profiles.
+4. Generate Markdown/HTML traceability and audit reports.
 
 ## Next — cross-repository project spine
 
