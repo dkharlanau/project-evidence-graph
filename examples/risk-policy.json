@@ -1,0 +1,15 @@
+{
+  "risk_field": "risk",
+  "risk_weights": {
+    "low": 1,
+    "medium": 2,
+    "high": 5,
+    "critical": 10
+  },
+  "default_weight": 1,
+  "require_known_risk": true,
+  "min_weighted_test_coverage": 0.15,
+  "min_weighted_evidence_coverage": 0.15,
+  "max_uncovered_test_risk_score": 10,
+  "max_uncovered_evidence_risk_score": 10
+}
