@@ -1,0 +1,72 @@
+{
+  "schema_version": "0.1",
+  "repository": "dkharlanau/cutover-graph",
+  "valid": true,
+  "validation": {
+    "plan": {
+      "task_count": 3,
+      "duplicate_tasks": [],
+      "missing_dependencies": [],
+      "cycles": [],
+      "valid": true
+    },
+    "contingencies": {
+      "contingency_count": 0,
+      "duplicate_contingencies": [],
+      "findings": [],
+      "valid": true
+    }
+  },
+  "tasks": [
+    {
+      "id": "load-customers",
+      "artifact_ref": "eac://dkharlanau/cutover-graph/task/load-customers",
+      "status": "done",
+      "complete": true,
+      "owner": "mdg",
+      "workstream": "customer",
+      "duration_minutes": 90,
+      "depends_on_refs": []
+    },
+    {
+      "id": "reconcile-customers",
+      "artifact_ref": "eac://dkharlanau/cutover-graph/task/reconcile-customers",
+      "status": "done",
+      "complete": true,
+      "owner": "data",
+      "workstream": "customer",
+      "risk": "high",
+      "duration_minutes": 45,
+      "actual_end": "2026-08-26T10:05:00Z",
+      "depends_on_refs": [
+        "eac://dkharlanau/cutover-graph/task/load-customers"
+      ],
+      "checkpoint": {
+        "artifact_ref": "eac://dkharlanau/cutover-graph/checkpoint/reconcile-customers",
+        "passed": true,
+        "missing_approvals": [],
+        "missing_evidence": [],
+        "duplicate_approvals": [],
+        "duplicate_evidence": [],
+        "required_approvals": ["business", "data"],
+        "required_evidence": ["reconciliation"],
+        "evidence_refs": [
+          "eac://dkharlanau/reconciliation-as-code/reconciliation/customer-country-post-load/run/production-load-01"
+        ]
+      }
+    },
+    {
+      "id": "open-interfaces",
+      "artifact_ref": "eac://dkharlanau/cutover-graph/task/open-interfaces",
+      "status": "pending",
+      "complete": false,
+      "owner": "integration",
+      "workstream": "integration",
+      "duration_minutes": 20,
+      "depends_on_refs": [
+        "eac://dkharlanau/cutover-graph/task/reconcile-customers"
+      ]
+    }
+  ],
+  "contingencies": []
+}
