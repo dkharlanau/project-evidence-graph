@@ -1,6 +1,6 @@
 import unittest
 
-from evidence_graph import build_report, shortest_path, traceability, validate
+from evidence_graph import build_report, impact, shortest_path, traceability, validate
 
 
 class EvidenceGraphTests(unittest.TestCase):
@@ -33,6 +33,17 @@ class EvidenceGraphTests(unittest.TestCase):
 
     def test_path(self):
         self.assertEqual(shortest_path(self.graph, "REQ-1", "EVID-1"), ["REQ-1", "DEC-1", "TEST-1", "EVID-1"])
+
+    def test_impact(self):
+        result = impact(self.graph, "TEST-1")
+        self.assertTrue(result["found"])
+        self.assertEqual(result["upstream"], ["DEC-1", "REQ-1"])
+        self.assertEqual(result["downstream"], ["EVID-1"])
+        self.assertEqual(result["upstream_by_type"], {"decision": ["DEC-1"], "requirement": ["REQ-1"]})
+        self.assertEqual(result["downstream_by_type"], {"evidence": ["EVID-1"]})
+
+    def test_missing_impact_node(self):
+        self.assertFalse(impact(self.graph, "MISSING")["found"])
 
     def test_broken_link(self):
         graph = dict(self.graph)
