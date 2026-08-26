@@ -26,6 +26,37 @@ class GraphMergeTests(unittest.TestCase):
         self.assertEqual(shortest_path(merged, "REQ-1", recon_ref), ["REQ-1", "TEST-1", recon_ref])
         self.assertIn("reconciliation", merged["merge_diagnostics"]["fragment_metadata"])
 
+    def test_fragment_external_bridge_resolves_after_all_nodes_are_loaded(self):
+        checkpoint_ref = "eac://dkharlanau/cutover-graph/checkpoint/reconcile"
+        recon_ref = "eac://dkharlanau/reconciliation-as-code/reconciliation/customer/run/run-1"
+        cutover = {
+            "nodes": [{"id": checkpoint_ref, "type": "evidence"}],
+            "links": [],
+            "external_bridges": [{"from": checkpoint_ref, "to": recon_ref, "type": "substantiated_by"}],
+            "cutover_import_diagnostics": {"valid": True},
+        }
+        reconciliation = {
+            "nodes": [{"id": recon_ref, "type": "evidence"}],
+            "links": [],
+        }
+        merged = merge_fragments([("cutover", cutover), ("reconciliation", reconciliation)])
+        self.assertTrue(merged["merge_diagnostics"]["valid"])
+        self.assertIn({"from": checkpoint_ref, "to": recon_ref, "type": "substantiated_by"}, merged["links"])
+        self.assertNotIn("external_bridges", merged["merge_diagnostics"]["fragment_metadata"]["cutover"])
+
+    def test_unresolved_fragment_external_bridge_fails(self):
+        checkpoint_ref = "eac://dkharlanau/cutover-graph/checkpoint/reconcile"
+        cutover = {
+            "nodes": [{"id": checkpoint_ref, "type": "evidence"}],
+            "links": [],
+            "external_bridges": [{"from": checkpoint_ref, "to": "eac://dkharlanau/reconciliation-as-code/reconciliation/missing/run/1", "type": "substantiated_by"}],
+        }
+        merged = merge_fragments([("cutover", cutover)])
+        self.assertFalse(merged["merge_diagnostics"]["valid"])
+        finding = merged["merge_diagnostics"]["unresolved_bridges"][0]
+        self.assertEqual(finding["source"], "fragment:cutover")
+        self.assertTrue(finding["missing"])
+
     def test_identical_duplicate_node_collapses(self):
         node = {"id": "REQ-1", "type": "requirement", "title": "Same"}
         merged = merge_fragments([("a", {"nodes": [node], "links": []}), ("b", {"nodes": [dict(node)], "links": []})])
