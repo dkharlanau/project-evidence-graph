@@ -1,0 +1,12 @@
+{
+  "nodes": [
+    {"id": "REQ-FRESH", "type": "requirement", "title": "Fresh evidence requirement"},
+    {"id": "REQ-STALE", "type": "requirement", "title": "Stale evidence requirement"},
+    {"id": "EVID-FRESH", "type": "evidence", "title": "Recent regression run", "observed_at": "2026-08-20T10:00:00Z"},
+    {"id": "EVID-STALE", "type": "evidence", "title": "Old regression run", "observed_at": "2026-05-01T10:00:00Z"}
+  ],
+  "links": [
+    {"from": "REQ-FRESH", "to": "EVID-FRESH", "type": "verified_by"},
+    {"from": "REQ-STALE", "to": "EVID-STALE", "type": "verified_by"}
+  ]
+}
