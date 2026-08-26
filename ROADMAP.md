@@ -18,32 +18,37 @@
 - GitHub Issues/PR JSON import with explicit-reference traceability and unresolved-reference diagnostics
 - built-in Jira work-item import profile
 - profile-driven ALM/other tracker import with explicit links only
+- stable `eac://` cross-repository artifact materialization
+- explicit local<->external and external<->external traceability links
+- cross-repository invalid/duplicate/unresolved reference diagnostics
 - reusable zero-build browser graph explorer
-- realistic traceability/freshness/risk/external-work-item examples
+- realistic traceability/freshness/risk/external-work-item/cross-repository examples
 - unit tests and GitHub Actions CI
 
-## Now — build the cross-repository project spine
+## Now — turn the graph into a review product
 
-1. Consume stable `eac://` artifact references from domain repositories.
-2. Link Mapping as Code, Interface as Code, Process as Code, Cutover Graph, and Reconciliation as Code artifacts without copying their full models.
-3. Generate Markdown/HTML traceability and audit reports.
+1. Generate Markdown/HTML traceability, assurance, and audit reports.
+2. Combine raw, fresh, and risk-weighted assurance into one release decision view.
+3. Expose a compact machine-readable project context for agents.
+4. Emit stable `eac://` refs from more domain repos so project packs need less manual linking.
 
-## Next — project context and evidence packs
+## Next — project evidence packs
 
 - generate release and cutover evidence packs
-- expose a compact machine-readable project context for agents
-- combine raw, fresh, and risk-weighted assurance into one release decision view
+- import Reconciliation as Code results as evidence/control artifacts
+- ingest Cutover Graph tasks/checkpoints/evidence by stable refs
 - export bounded subgraphs for downstream agents/tools
+- add historical graph snapshot comparison and rationale drift
 
 ## Later — operational assurance
 
 - signed or hashed evidence references
-- historical graph snapshots and rationale drift
 - project-level assurance cases and audit exports
 - cross-project policy packs
+- external evidence stores and verification adapters
 
 ## Product test
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented, how was it tested, is the evidence current enough to trust now, and are the remaining assurance gaps acceptable for the requirement's business risk?
+> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested, is the evidence current enough to trust now, and are the remaining assurance gaps acceptable for the requirement's business risk?
