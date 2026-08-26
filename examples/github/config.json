@@ -1,0 +1,8 @@
+{
+  "label_type_map": {
+    "requirement": "requirement",
+    "bug": "defect"
+  },
+  "default_issue_type": "requirement",
+  "pull_request_type": "change"
+}
