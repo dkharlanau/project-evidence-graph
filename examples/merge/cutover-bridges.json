@@ -1,0 +1,13 @@
+{
+  "links": [
+    {
+      "from": "TEST-COUNTRY",
+      "to": "eac://dkharlanau/cutover-graph/task/reconcile-customers",
+      "type": "executed_in_cutover",
+      "provenance": {
+        "kind": "explicit_project_bridge",
+        "reason": "The integration test is executed and accepted through the production cutover reconciliation task"
+      }
+    }
+  ]
+}
