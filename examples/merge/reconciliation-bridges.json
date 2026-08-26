@@ -1,0 +1,13 @@
+{
+  "links": [
+    {
+      "from": "TEST-COUNTRY",
+      "to": "eac://dkharlanau/reconciliation-as-code/reconciliation/customer-country-post-load/run/production-load-01",
+      "type": "verified_by_reconciliation",
+      "provenance": {
+        "kind": "explicit_project_bridge",
+        "reason": "Post-load reconciliation is the acceptance evidence for the integration test"
+      }
+    }
+  ]
+}
