@@ -7,20 +7,22 @@
 - directed path tracing
 - upstream/downstream impact analysis
 - requirement-to-test and requirement-to-evidence coverage
+- fresh-evidence requirement coverage
+- stale/future/missing-timestamp evidence diagnostics
+- policy-based evidence freshness gates
 - generated traceability-matrix data
 - policy-based quality gates for CI
 - generic CSV import with file/row provenance
 - GitHub Issues/PR JSON import with explicit-reference traceability and unresolved-reference diagnostics
 - reusable zero-build browser graph explorer
-- realistic traceability-gap examples
+- realistic traceability/freshness-gap examples
 - unit tests and GitHub Actions CI
 
-## Now — ingest richer project evidence
+## Now — strengthen assurance and reporting
 
 1. Add Jira/ALM export profiles on top of the generic importer.
-2. Add evidence freshness and stale-evidence detection.
-3. Add risk-weighted coverage and quality policy profiles.
-4. Generate Markdown/HTML traceability and audit reports.
+2. Add risk-weighted coverage and assurance policy profiles.
+3. Generate Markdown/HTML traceability and audit reports.
 
 ## Next — cross-repository project spine
 
@@ -43,4 +45,4 @@
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented, how was it tested, and what evidence proves the current state?
+> Why does this exist, what is upstream/downstream of it, where is it implemented, how was it tested, and is the evidence current enough to trust now?
