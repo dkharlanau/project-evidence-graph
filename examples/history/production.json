@@ -1,0 +1,12 @@
+{
+  "nodes": [
+    {"id": "REQ-COUNTRY", "type": "requirement", "risk": "high", "title": "Customer country must replicate consistently"},
+    {"id": "MAP-COUNTRY", "type": "mapping", "title": "Customer country mapping", "metadata": {"version": "v2"}},
+    {"id": "TEST-COUNTRY", "type": "test", "title": "Customer country regression test"},
+    {"id": "EVID-COUNTRY", "type": "evidence", "title": "Rehearsal regression evidence", "observed_at": "2026-08-24T10:00:00Z"}
+  ],
+  "links": [
+    {"from": "REQ-COUNTRY", "to": "MAP-COUNTRY", "type": "implemented_by"},
+    {"from": "MAP-COUNTRY", "to": "TEST-COUNTRY", "type": "verified_by"}
+  ]
+}
