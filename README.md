@@ -6,40 +6,54 @@ Connect requirements, decisions, mappings, interfaces, tests, defects, changes, 
 
 Project rationale disappears because requirements, mappings, tests, defects, changes, decisions, and evidence live in separate systems. A spreadsheet traceability matrix helps for a moment, but it is usually manual, stale, and hard to query.
 
-Project Evidence Graph models traceability as data first. A matrix, quality gate, evidence pack, or visual explorer becomes a generated view of the graph rather than the source of truth.
+Project Evidence Graph models traceability as data first. A matrix, quality gate, impact report, evidence pack, or visual explorer becomes a generated view of the graph rather than the source of truth.
 
-## Current MVP
+## Current capabilities
 
-The repository now includes a zero-dependency Python engine that can:
-
-- validate project artifact nodes and links
-- detect duplicate nodes and links
-- detect broken references
-- trace directed paths from one artifact to another
-- calculate requirement-to-test coverage
-- calculate requirement-to-evidence coverage
+- import ordinary CSV requirements/tests/links through a manifest
+- preserve source file + row provenance
+- validate artifact nodes and links
+- detect duplicate nodes/links, broken references, and invalid artifact types
+- trace directed paths between artifacts
+- calculate requirement-to-test and requirement-to-evidence coverage
 - generate traceability-matrix data per requirement
+- run upstream/downstream impact analysis for any artifact
 - enforce machine-readable quality policies in CI
 - browse evidence, relationship, and cutover graphs in a reusable zero-build HTML explorer
 
-This absorbs the useful core of three previously separate product ideas:
+This repository absorbs the useful core of three previously separate ideas:
 
 - `traceability-matrix` -> generated from the evidence graph
-- `quality-gate-as-code` -> implemented as `quality_gate.py`
-- `github-pages-explorer` -> implemented as `docs/index.html`
+- `quality-gate-as-code` -> `quality_gate.py`
+- `github-pages-explorer` -> `docs/index.html`
 
-Keeping these capabilities together avoids three thin repositories while the interfaces are still evolving.
+Keeping these capabilities together avoids thin repositories while the shared contracts are still evolving.
 
 ## Quick start
+
+Analyze the bundled graph:
 
 ```bash
 python evidence_graph.py examples/customer-change.json analyze
 python evidence_graph.py examples/customer-change.json path REQ-001 EVID-001
+python evidence_graph.py examples/customer-change.json impact TEST-001
 python quality_gate.py examples/customer-change.json examples/quality-policy.json
+```
+
+Build a graph from CSV exports:
+
+```bash
+python csv_adapter.py examples/csv/manifest.json --output project-evidence.json
+python evidence_graph.py project-evidence.json analyze
+```
+
+Run tests:
+
+```bash
 python -m unittest discover -s tests -v
 ```
 
-The bundled example deliberately contains a second requirement without tests or evidence. The report therefore exposes a real traceability gap instead of only demonstrating a perfect graph.
+The bundled examples intentionally contain traceability gaps so reports demonstrate missing coverage instead of only a perfect graph.
 
 ## Quality policy
 
@@ -53,19 +67,43 @@ The bundled example deliberately contains a second requirement without tests or 
 }
 ```
 
-The command exits non-zero when the policy fails, so the same rule set can become a GitHub Actions quality gate.
+The quality command exits non-zero when policy fails, so the same rules become a GitHub Actions gate.
+
+## CSV import manifest
+
+```json
+{
+  "artifact_sources": [
+    {
+      "file": "requirements.csv",
+      "id": "{REQ_ID}",
+      "type": "requirement",
+      "title": "{TITLE}",
+      "fields": {"risk": "{RISK}"}
+    }
+  ],
+  "link_sources": [
+    {
+      "file": "links.csv",
+      "from": "{FROM_ID}",
+      "to": "{TO_ID}",
+      "type": "{RELATION}"
+    }
+  ]
+}
+```
 
 ## Reusable graph explorer
 
 Open `docs/index.html` directly in a browser. No build step or external JavaScript dependency is required.
 
-The explorer accepts three canonical shapes:
+It accepts:
 
 - Project Evidence Graph: `nodes` + `links`
 - Data Relationship Map: `nodes` + `relationships`
 - Cutover Graph: `tasks` + `depends_on`
 
-It supports local JSON loading, filtering, grouped SVG visualization, and node/connection inspection. This makes it reusable across the repository family without coupling the projects to a frontend framework.
+The explorer supports local JSON loading, filtering, grouped SVG visualization, and node/connection inspection.
 
 ## Canonical model
 
@@ -89,24 +127,23 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 ## Product direction
 
-1. Import adapters for GitHub Issues, Jira/CSV exports, ALM exports, and mapping repositories.
-2. Bidirectional impact analysis: “what changes if this requirement/interface changes?”
-3. Evidence freshness and provenance.
+1. GitHub Issues/PR and Jira/ALM export adapters.
+2. Evidence freshness and stale-evidence detection.
+3. Risk-weighted coverage and policy profiles.
 4. Generated Markdown/HTML release and audit reports.
-5. Cross-repository references to Mapping as Code, Interface as Code, Process as Code, and Cutover Graph.
-6. Machine-readable project context for AI agents.
+5. Stable cross-repository references to Mapping as Code, Interface as Code, Process as Code, Reconciliation as Code, and Cutover Graph.
+6. Compact machine-readable project context for agents.
 7. Release/cutover evidence packs generated from the graph.
 
 ## Design principles
 
-- versionable
-- portable
-- machine-readable
-- deterministic-first
-- visual where useful
-- Git-friendly
-- vendor-neutral where practical
-- interoperable with enterprise tools
+- traceability as graph data, not a manually maintained matrix
+- deterministic coverage and policy logic
+- provenance-preserving imports
+- versionable and portable state
+- vendor-neutral core
+- Git-friendly outputs
+- synthetic examples safe to publish
 
 ## Related projects
 
@@ -122,4 +159,4 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 ## Status
 
-**MVP / active development.** Validation, directed traceability, coverage metrics, quality gates, reusable graph exploration, examples, tests, and CI are implemented.
+**MVP / active development.** CSV ingestion, provenance, validation, traceability, impact analysis, coverage metrics, policy gates, reusable graph exploration, examples, tests, and CI are implemented.
