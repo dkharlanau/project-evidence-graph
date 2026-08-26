@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    {"id": "REQ-001", "type": "requirement", "title": "Replicate customer country consistently"},
+    {"id": "DEC-001", "type": "decision", "title": "Use canonical ISO country code"},
+    {"id": "MAP-001", "type": "mapping", "title": "Legacy country to S/4 country"},
+    {"id": "IF-001", "type": "interface", "title": "MDG to S/4 customer replication"},
+    {"id": "TEST-001", "type": "test", "title": "Country replication integration test"},
+    {"id": "DEF-001", "type": "defect", "title": "Country missing after failed replication"},
+    {"id": "CHG-001", "type": "change", "title": "Add retry-safe country handling"},
+    {"id": "EVID-001", "type": "evidence", "title": "Successful regression run"},
+    {"id": "REQ-002", "type": "requirement", "title": "Customer text must replicate"}
+  ],
+  "links": [
+    {"from": "REQ-001", "to": "DEC-001", "type": "resolved_by"},
+    {"from": "DEC-001", "to": "MAP-001", "type": "implemented_by"},
+    {"from": "MAP-001", "to": "IF-001", "type": "used_by"},
+    {"from": "IF-001", "to": "TEST-001", "type": "verified_by"},
+    {"from": "TEST-001", "to": "DEF-001", "type": "revealed"},
+    {"from": "DEF-001", "to": "CHG-001", "type": "fixed_by"},
+    {"from": "CHG-001", "to": "EVID-001", "type": "verified_by"}
+  ]
+}
