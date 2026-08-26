@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {"id": "REQ-CRIT", "type": "requirement", "risk": "critical", "title": "Customer master must remain available at go-live"},
+    {"id": "REQ-LOW-1", "type": "requirement", "risk": "low", "title": "Optional report label is aligned"},
+    {"id": "REQ-LOW-2", "type": "requirement", "risk": "low", "title": "Help text is updated"},
+    {"id": "TEST-1", "type": "test"},
+    {"id": "TEST-2", "type": "test"},
+    {"id": "EVID-1", "type": "evidence"},
+    {"id": "EVID-2", "type": "evidence"}
+  ],
+  "links": [
+    {"from": "REQ-LOW-1", "to": "TEST-1", "type": "verified_by"},
+    {"from": "TEST-1", "to": "EVID-1", "type": "produced"},
+    {"from": "REQ-LOW-2", "to": "TEST-2", "type": "verified_by"},
+    {"from": "TEST-2", "to": "EVID-2", "type": "produced"}
+  ]
+}
