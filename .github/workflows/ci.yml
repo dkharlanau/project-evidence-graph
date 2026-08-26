@@ -15,6 +15,7 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: python evidence_graph.py examples/customer-change.json analyze
       - run: python evidence_graph.py examples/customer-change.json path REQ-001 EVID-001
+      - run: python evidence_graph.py examples/customer-change.json impact TEST-001
       - run: python quality_gate.py examples/customer-change.json examples/quality-policy.json
       - run: python csv_adapter.py examples/csv/manifest.json --output /tmp/project-evidence.json
       - run: python evidence_graph.py /tmp/project-evidence.json analyze
