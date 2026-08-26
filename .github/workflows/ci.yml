@@ -41,7 +41,10 @@ jobs:
       - run: python cross_repo.py examples/cross-repo-pack.json --output /tmp/cross-repo-evidence.json
       - run: python evidence_graph.py /tmp/cross-repo-evidence.json analyze
       - run: python evidence_graph.py /tmp/cross-repo-evidence.json path REQ-COUNTRY EVID-COUNTRY
-      - run: python project_review.py /tmp/cross-repo-evidence.json --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --markdown /tmp/project-review.md --html /tmp/project-review.html
+      - run: python graph_merge.py /tmp/cross-repo-evidence.json /tmp/reconciliation-evidence.json --bridges examples/merge/reconciliation-bridges.json --output /tmp/merged-project.json
+      - run: python evidence_graph.py /tmp/merged-project.json analyze
+      - run: python evidence_graph.py /tmp/merged-project.json path REQ-COUNTRY eac://dkharlanau/reconciliation-as-code/reconciliation/customer-country-post-load/run/production-load-01
+      - run: python project_review.py /tmp/merged-project.json --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --markdown /tmp/project-review.md --html /tmp/project-review.html
       - run: test -s /tmp/project-review.md && test -s /tmp/project-review.html
-      - run: python project_context.py /tmp/cross-repo-evidence.json --focus REQ-COUNTRY --depth 2 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --output /tmp/project-context.json
+      - run: python project_context.py /tmp/merged-project.json --focus REQ-COUNTRY --depth 4 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --output /tmp/project-context.json
       - run: test -s /tmp/project-context.json
