@@ -1,0 +1,26 @@
+{
+  "work_items": [
+    {
+      "id": "CALM-1",
+      "type": "requirement",
+      "title": "Post-load customer reconciliation must pass",
+      "status": "done",
+      "risk": "R3",
+      "updated_at": "2026-08-22T08:00:00+00:00",
+      "url": "https://alm.example/work-items/CALM-1",
+      "links": [
+        {"target": "CALM-2", "relation": "verified_by"}
+      ]
+    },
+    {
+      "id": "CALM-2",
+      "type": "test",
+      "title": "Customer reconciliation test",
+      "status": "done",
+      "risk": "R1",
+      "updated_at": "2026-08-22T09:00:00+00:00",
+      "url": "https://alm.example/work-items/CALM-2",
+      "links": []
+    }
+  ]
+}
