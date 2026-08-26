@@ -48,3 +48,6 @@ jobs:
       - run: test -s /tmp/project-review.md && test -s /tmp/project-review.html
       - run: python project_context.py /tmp/merged-project.json --focus REQ-COUNTRY --depth 4 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --output /tmp/project-context.json
       - run: test -s /tmp/project-context.json
+      - run: python evidence_pack.py build /tmp/merged-project.json /tmp/release-evidence-pack --focus REQ-COUNTRY --depth 5 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json
+      - run: python evidence_pack.py verify /tmp/release-evidence-pack
+      - run: test -s /tmp/release-evidence-pack/manifest.json && test -s /tmp/release-evidence-pack/graph.json && test -s /tmp/release-evidence-pack/context.json && test -s /tmp/release-evidence-pack/review.md && test -s /tmp/release-evidence-pack/review.html
