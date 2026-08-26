@@ -20,9 +20,12 @@
 - profile-driven ALM/other tracker import with explicit links only
 - Reconciliation-as-Code evidence v1 import with pass->evidence / fail->defect semantics
 - stable reconciliation run/check `eac://` references and preserved fingerprints
+- Cutover Graph artifact-index import with stable task/checkpoint/contingency refs
+- passed checkpoint -> evidence / incomplete checkpoint -> defect semantics
+- automatic checkpoint -> Reconciliation-as-Code bridge resolution through explicit `eac://` evidence refs
 - stable `eac://` cross-repository artifact materialization
 - explicit local<->external and external<->external traceability links
-- deterministic graph-fragment merge with explicit bridge links
+- deterministic graph-fragment merge with explicit and fragment-emitted bridge links
 - cross-repository invalid/duplicate/conflict/unresolved diagnostics
 - consolidated Markdown/HTML project assurance review
 - one explicit review decision across supplied quality/freshness/risk policy gates
@@ -31,22 +34,22 @@
 - integrity-verifiable bounded release/cutover evidence packs
 - deterministic `pack_id`, per-file SHA-256 manifest, and pack verification
 - reusable zero-build browser graph explorer
-- realistic traceability/freshness/risk/external-work-item/reconciliation/cross-repository examples
+- realistic traceability/freshness/risk/external-work-item/reconciliation/cutover/cross-repository examples
 - unit tests and GitHub Actions CI
 
-## Now — cutover and domain emitters
+## Now — historical assurance and broader domain emitters
 
-1. Ingest Cutover Graph tasks/checkpoints/evidence by stable refs.
-2. Emit stable `eac://` refs directly from Cutover Graph and Data Relationship Map.
-3. Connect Reconciliation-as-Code evidence refs into Cutover Graph checkpoints without duplicating evidence content.
+1. Compare project graph snapshots and explain traceability/rationale drift.
+2. Compare assurance/evidence-pack decisions between rehearsal, release, and production states.
+3. Detect changed requirement -> changed implementation -> required retest/evidence refresh.
+4. Consume stable `eac://` refs from Data Relationship Map and additional domain repositories.
 
-## Next — historical assurance
+## Next — evidence lifecycle
 
-- graph snapshot comparison and rationale drift
-- assurance trend between releases
-- changed requirement -> changed implementation -> required retest analysis
 - explicit supersedes/replaces relationships for evidence and decisions
-- compare evidence packs/release decisions across rehearsals and production
+- stale-by-change detection: evidence becomes suspect when implementation changed after observation
+- release-to-release assurance trend
+- bounded evidence-pack comparison reports
 
 ## Later — operational assurance
 
@@ -59,4 +62,4 @@
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, can that state be reviewed and integrity-checked in one bounded release pack, and can an agent receive a reproducible context package that identifies exactly which project state it consumed?
+> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, which cutover checkpoint accepted it, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, can that state be reviewed and integrity-checked in one bounded release pack, and how did that assurance state change from rehearsal to production?
