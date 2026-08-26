@@ -1,0 +1,7 @@
+{
+  "require_valid_graph": true,
+  "min_test_coverage": 0.5,
+  "min_evidence_coverage": 0.5,
+  "max_requirements_without_tests": 1,
+  "max_requirements_without_evidence": 1
+}
