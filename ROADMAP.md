@@ -21,24 +21,26 @@
 - stable `eac://` cross-repository artifact materialization
 - explicit local<->external and external<->external traceability links
 - cross-repository invalid/duplicate/unresolved reference diagnostics
+- consolidated Markdown/HTML project assurance review
+- one explicit review decision across supplied quality/freshness/risk policy gates
 - reusable zero-build browser graph explorer
 - realistic traceability/freshness/risk/external-work-item/cross-repository examples
 - unit tests and GitHub Actions CI
 
-## Now — turn the graph into a review product
+## Now — project context and evidence packs
 
-1. Generate Markdown/HTML traceability, assurance, and audit reports.
-2. Combine raw, fresh, and risk-weighted assurance into one release decision view.
-3. Expose a compact machine-readable project context for agents.
-4. Emit stable `eac://` refs from more domain repos so project packs need less manual linking.
+1. Expose a compact machine-readable project context for agents.
+2. Generate release and cutover evidence packs from bounded graph slices.
+3. Import Reconciliation as Code results as evidence/control artifacts.
+4. Ingest Cutover Graph tasks/checkpoints/evidence by stable refs.
+5. Emit stable `eac://` refs from more domain repos so project packs need less manual linking.
 
-## Next — project evidence packs
+## Next — historical assurance
 
-- generate release and cutover evidence packs
-- import Reconciliation as Code results as evidence/control artifacts
-- ingest Cutover Graph tasks/checkpoints/evidence by stable refs
-- export bounded subgraphs for downstream agents/tools
-- add historical graph snapshot comparison and rationale drift
+- graph snapshot comparison and rationale drift
+- assurance trend between releases
+- changed requirement -> changed implementation -> required retest analysis
+- explicit supersedes/replaces relationships for evidence and decisions
 
 ## Later — operational assurance
 
@@ -51,4 +53,4 @@
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested, is the evidence current enough to trust now, and are the remaining assurance gaps acceptable for the requirement's business risk?
+> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, and can that state be reviewed in one reproducible release artifact?
