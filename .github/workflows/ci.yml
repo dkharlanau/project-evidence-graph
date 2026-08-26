@@ -31,3 +31,7 @@ jobs:
       - run: python evidence_graph.py /tmp/project-evidence.json analyze
       - run: python github_adapter.py examples/github/export.json --config examples/github/config.json --output /tmp/github-evidence.json
       - run: python evidence_graph.py /tmp/github-evidence.json analyze
+      - run: python workitem_adapter.py examples/workitems/jira-export.json --profile jira --output /tmp/jira-evidence.json
+      - run: python evidence_graph.py /tmp/jira-evidence.json analyze
+      - run: python workitem_adapter.py examples/workitems/alm-export.json --profile examples/workitems/alm-profile.json --output /tmp/alm-evidence.json
+      - run: python evidence_graph.py /tmp/alm-evidence.json analyze
