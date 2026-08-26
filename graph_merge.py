@@ -44,11 +44,18 @@ def merge_fragments(
     identical_duplicate_links: list[dict[str, str]] = []
     conflicting_links: list[dict[str, Any]] = []
     fragment_metadata: dict[str, dict[str, Any]] = {}
+    fragment_bridge_candidates: list[tuple[str, int, Any]] = []
 
     for label, fragment in fragments:
-        metadata = {key: value for key, value in fragment.items() if key not in {"nodes", "links"}}
+        metadata = {key: value for key, value in fragment.items() if key not in {"nodes", "links", "external_bridges"}}
         if metadata:
             fragment_metadata[label] = metadata
+        external_bridges = fragment.get("external_bridges", [])
+        if isinstance(external_bridges, list):
+            for index, link in enumerate(external_bridges):
+                fragment_bridge_candidates.append((f"fragment:{label}", index, link))
+        elif external_bridges is not None:
+            fragment_bridge_candidates.append((f"fragment:{label}", -1, {"__invalid_external_bridges__": external_bridges}))
 
         for node in fragment.get("nodes", []):
             if not isinstance(node, dict):
@@ -96,33 +103,47 @@ def merge_fragments(
                     "second": link,
                 })
 
-    unresolved_bridges: list[dict[str, Any]] = []
-    invalid_bridges: list[dict[str, Any]] = []
+    bridge_candidates = sorted(fragment_bridge_candidates, key=lambda item: (item[0], item[1]))
     if bridges is not None:
         bridge_links = bridges.get("links", []) if isinstance(bridges, dict) else []
-        if not isinstance(bridge_links, list):
-            invalid_bridges.append({"error": "bridges.links must be an array"})
-            bridge_links = []
-        for index, link in enumerate(bridge_links):
-            if not isinstance(link, dict):
-                invalid_bridges.append({"index": index, "error": "bridge link is not an object"})
-                continue
-            key = _link_key(link)
-            missing = [node_id for node_id in (key[0], key[2]) if node_id not in nodes]
-            if missing:
-                unresolved_bridges.append({"index": index, "from": key[0], "to": key[2], "missing": missing})
-                continue
-            if key not in links:
-                links[key] = dict(link)
-                link_sources[key] = "bridges"
-            elif _stable(links[key]) != _stable(link):
-                conflicting_links.append({
-                    "key": list(key),
-                    "first_fragment": link_sources[key],
-                    "second_fragment": "bridges",
-                    "first": links[key],
-                    "second": link,
-                })
+        if isinstance(bridge_links, list):
+            bridge_candidates.extend(("bridges", index, link) for index, link in enumerate(bridge_links))
+        else:
+            bridge_candidates.append(("bridges", -1, {"__invalid_bridge_list__": bridge_links}))
+
+    unresolved_bridges: list[dict[str, Any]] = []
+    invalid_bridges: list[dict[str, Any]] = []
+    for source, index, link in bridge_candidates:
+        if isinstance(link, dict) and "__invalid_external_bridges__" in link:
+            invalid_bridges.append({"source": source, "error": "external_bridges must be an array"})
+            continue
+        if isinstance(link, dict) and "__invalid_bridge_list__" in link:
+            invalid_bridges.append({"source": source, "error": "bridges.links must be an array"})
+            continue
+        if not isinstance(link, dict):
+            invalid_bridges.append({"source": source, "index": index, "error": "bridge link is not an object"})
+            continue
+        key = _link_key(link)
+        if not key[0] or not key[2]:
+            invalid_bridges.append({"source": source, "index": index, "error": "bridge endpoint is missing", "key": list(key)})
+            continue
+        missing = [node_id for node_id in (key[0], key[2]) if node_id not in nodes]
+        if missing:
+            unresolved_bridges.append({"source": source, "index": index, "from": key[0], "to": key[2], "missing": missing})
+            continue
+        if key not in links:
+            links[key] = dict(link)
+            link_sources[key] = source
+        elif _stable(links[key]) == _stable(link):
+            identical_duplicate_links.append({"key": "|".join(key), "fragments": ",".join(sorted({link_sources[key], source}))})
+        else:
+            conflicting_links.append({
+                "key": list(key),
+                "first_fragment": link_sources[key],
+                "second_fragment": source,
+                "first": links[key],
+                "second": link,
+            })
 
     diagnostics = {
         "fragments": [label for label, _ in fragments],
@@ -131,8 +152,8 @@ def merge_fragments(
         "conflicting_nodes": sorted(conflicting_nodes, key=lambda item: (str(item.get("id")), str(item.get("second_fragment", item.get("fragment", ""))))),
         "identical_duplicate_links": sorted(identical_duplicate_links, key=lambda item: (item.get("key", ""), item.get("fragments", ""))),
         "conflicting_links": sorted(conflicting_links, key=lambda item: (_stable(item.get("key")), str(item.get("second_fragment", item.get("fragment", ""))))),
-        "invalid_bridges": invalid_bridges,
-        "unresolved_bridges": unresolved_bridges,
+        "invalid_bridges": sorted(invalid_bridges, key=lambda item: (str(item.get("source", "")), int(item.get("index", -1)))),
+        "unresolved_bridges": sorted(unresolved_bridges, key=lambda item: (str(item.get("source", "")), int(item.get("index", -1)))),
     }
     diagnostics["valid"] = not any(
         diagnostics[key]
