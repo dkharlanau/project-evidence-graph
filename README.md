@@ -6,7 +6,7 @@ Connect requirements, decisions, mappings, interfaces, tests, defects, changes, 
 
 Project rationale disappears because requirements, mappings, tests, defects, changes, decisions, and evidence live in separate systems. A spreadsheet traceability matrix helps for a moment, but it is usually manual, stale, and hard to query.
 
-Project Evidence Graph models traceability as data first. A matrix becomes one generated view of the graph rather than the source of truth.
+Project Evidence Graph models traceability as data first. A matrix, quality gate, evidence pack, or visual explorer becomes a generated view of the graph rather than the source of truth.
 
 ## Current MVP
 
@@ -18,20 +18,54 @@ The repository now includes a zero-dependency Python engine that can:
 - trace directed paths from one artifact to another
 - calculate requirement-to-test coverage
 - calculate requirement-to-evidence coverage
-- generate a traceability matrix per requirement
-- run validation automatically in GitHub Actions
+- generate traceability-matrix data per requirement
+- enforce machine-readable quality policies in CI
+- browse evidence, relationship, and cutover graphs in a reusable zero-build HTML explorer
 
-This absorbs the core `traceability-matrix` idea, so a separate repository is unnecessary unless the matrix later becomes an independent UI/product.
+This absorbs the useful core of three previously separate product ideas:
+
+- `traceability-matrix` -> generated from the evidence graph
+- `quality-gate-as-code` -> implemented as `quality_gate.py`
+- `github-pages-explorer` -> implemented as `docs/index.html`
+
+Keeping these capabilities together avoids three thin repositories while the interfaces are still evolving.
 
 ## Quick start
 
 ```bash
 python evidence_graph.py examples/customer-change.json analyze
 python evidence_graph.py examples/customer-change.json path REQ-001 EVID-001
+python quality_gate.py examples/customer-change.json examples/quality-policy.json
 python -m unittest discover -s tests -v
 ```
 
 The bundled example deliberately contains a second requirement without tests or evidence. The report therefore exposes a real traceability gap instead of only demonstrating a perfect graph.
+
+## Quality policy
+
+```json
+{
+  "require_valid_graph": true,
+  "min_test_coverage": 0.5,
+  "min_evidence_coverage": 0.5,
+  "max_requirements_without_tests": 1,
+  "max_requirements_without_evidence": 1
+}
+```
+
+The command exits non-zero when the policy fails, so the same rule set can become a GitHub Actions quality gate.
+
+## Reusable graph explorer
+
+Open `docs/index.html` directly in a browser. No build step or external JavaScript dependency is required.
+
+The explorer accepts three canonical shapes:
+
+- Project Evidence Graph: `nodes` + `links`
+- Data Relationship Map: `nodes` + `relationships`
+- Cutover Graph: `tasks` + `depends_on`
+
+It supports local JSON loading, filtering, grouped SVG visualization, and node/connection inspection. This makes it reusable across the repository family without coupling the projects to a frontend framework.
 
 ## Canonical model
 
@@ -57,13 +91,11 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 1. Import adapters for GitHub Issues, Jira/CSV exports, ALM exports, and mapping repositories.
 2. Bidirectional impact analysis: “what changes if this requirement/interface changes?”
-3. Policy gates such as “every high-risk requirement requires tests and evidence.”
-4. Evidence freshness and provenance.
-5. Generated Markdown/HTML traceability reports.
-6. Interactive GitHub Pages graph explorer.
-7. Cross-repository references to Mapping as Code, Interface as Code, Process as Code, and Cutover Graph.
-8. Machine-readable project context for AI agents.
-9. Release/cutover evidence packs generated from the graph.
+3. Evidence freshness and provenance.
+4. Generated Markdown/HTML release and audit reports.
+5. Cross-repository references to Mapping as Code, Interface as Code, Process as Code, and Cutover Graph.
+6. Machine-readable project context for AI agents.
+7. Release/cutover evidence packs generated from the graph.
 
 ## Design principles
 
@@ -90,4 +122,4 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 ## Status
 
-**MVP / active development.** Validation, directed traceability, coverage metrics, generated matrix data, examples, tests, and CI are implemented.
+**MVP / active development.** Validation, directed traceability, coverage metrics, quality gates, reusable graph exploration, examples, tests, and CI are implemented.
