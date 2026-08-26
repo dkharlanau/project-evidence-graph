@@ -12,31 +12,30 @@ Project Evidence Graph models traceability as data first. A matrix, quality gate
 
 - import ordinary CSV requirements/tests/links through a manifest
 - import saved GitHub Issues/PR JSON exports with stable canonical IDs
-- preserve source provenance and canonical GitHub URLs
-- create GitHub traceability only from explicit `#issue` or `linked_issues` references
-- report unresolved GitHub references separately instead of inventing links
+- import saved Jira JSON exports with a built-in profile
+- import ALM/other work-item JSON through profile-driven dot-path mapping
+- preserve source IDs, status, risk, timestamps, URLs, and provenance
+- create tracker/GitHub traceability only from explicit references
+- report unresolved external references instead of inventing links
 - validate artifact nodes and links
 - detect duplicate nodes/links, broken references, and invalid artifact types
 - trace directed paths between artifacts
 - calculate requirement-to-test and requirement-to-evidence coverage
 - calculate requirement coverage by **fresh** evidence, not merely any evidence
 - classify evidence as fresh, stale, future-dated, or missing a trusted timestamp
+- calculate **risk-weighted** test/evidence coverage and uncovered risk score
 - generate traceability-matrix data per requirement
 - run upstream/downstream impact analysis for any artifact
-- enforce machine-readable quality and evidence-freshness policies in CI
+- enforce machine-readable quality, freshness, and risk-assurance policies in CI
 - browse evidence, relationship, and cutover graphs in a reusable zero-build HTML explorer
 
 This repository absorbs the useful core of three previously separate ideas:
 
 - `traceability-matrix` -> generated from the evidence graph
-- `quality-gate-as-code` -> `quality_gate.py` plus `evidence_freshness.py`
+- `quality-gate-as-code` -> quality/freshness/risk policy modules
 - `github-pages-explorer` -> `docs/index.html`
 
-Keeping these capabilities together avoids thin repositories while the shared contracts are still evolving.
-
 ## Quick start
-
-Analyze the bundled graph:
 
 ```bash
 python evidence_graph.py examples/customer-change.json analyze
@@ -44,22 +43,38 @@ python evidence_graph.py examples/customer-change.json path REQ-001 EVID-001
 python evidence_graph.py examples/customer-change.json impact TEST-001
 python quality_gate.py examples/customer-change.json examples/quality-policy.json
 python evidence_freshness.py examples/evidence-freshness.json examples/freshness-policy.json
+python risk_assurance.py examples/risk-assurance.json examples/risk-policy.json
 ```
 
-Build a graph from CSV exports:
+CSV import:
 
 ```bash
 python csv_adapter.py examples/csv/manifest.json --output project-evidence.json
 python evidence_graph.py project-evidence.json analyze
 ```
 
-Build a graph from a saved GitHub Issues/PR export:
+GitHub import:
 
 ```bash
 python github_adapter.py examples/github/export.json \
   --config examples/github/config.json \
   --output github-evidence.json
-python evidence_graph.py github-evidence.json analyze
+```
+
+Jira import:
+
+```bash
+python workitem_adapter.py examples/workitems/jira-export.json \
+  --profile jira \
+  --output jira-evidence.json
+```
+
+Generic ALM/work-item import:
+
+```bash
+python workitem_adapter.py examples/workitems/alm-export.json \
+  --profile examples/workitems/alm-profile.json \
+  --output alm-evidence.json
 ```
 
 Run tests:
@@ -68,7 +83,67 @@ Run tests:
 python -m unittest discover -s tests -v
 ```
 
-The bundled examples intentionally contain traceability gaps, stale evidence, or unresolved references so reports demonstrate real diagnostics rather than only a perfect graph.
+## Risk-weighted assurance
+
+Raw coverage treats every requirement equally. That is often the wrong business signal: one untested critical requirement can matter more than many low-risk gaps.
+
+`risk_assurance.py` assigns explicit weights and calculates weighted coverage:
+
+```json
+{
+  "risk_field": "risk",
+  "risk_weights": {
+    "low": 1,
+    "medium": 2,
+    "high": 5,
+    "critical": 10
+  },
+  "default_weight": 1,
+  "require_known_risk": true,
+  "min_weighted_test_coverage": 0.9,
+  "min_weighted_evidence_coverage": 0.9,
+  "max_uncovered_test_risk_score": 3,
+  "max_uncovered_evidence_risk_score": 3
+}
+```
+
+The report includes per-requirement risk/weight/coverage state, weighted test/evidence coverage, uncovered risk scores, and unknown-risk diagnostics. The existing unweighted traceability calculation remains unchanged.
+
+## Work-item import profiles
+
+`workitem_adapter.py` keeps vendor-specific JSON at the import boundary. The built-in `jira` profile understands the common `issues[].fields.*` export shape, including explicit Jira issue links.
+
+For another tracker or an exported SAP Cloud ALM-style work-item list, use a profile:
+
+```json
+{
+  "source": "cloud-alm",
+  "project_name": "CUSTOMER-TRANSFORMATION",
+  "items_path": "work_items",
+  "id": "id",
+  "tracker_type": "type",
+  "title": "title",
+  "status": "status",
+  "risk": "risk",
+  "updated_at": "updated_at",
+  "url": "url",
+  "type_map": {
+    "requirement": "requirement",
+    "test": "test",
+    "defect": "defect",
+    "change": "change"
+  },
+  "default_artifact_type": "change",
+  "links": {
+    "path": "links",
+    "target": "target",
+    "type": "relation",
+    "direction": "outward"
+  }
+}
+```
+
+Unknown tracker item types use the explicitly configured default. Unresolved linked IDs remain diagnostics and do not create invented artifacts.
 
 ## Evidence freshness
 
@@ -86,15 +161,7 @@ A requirement should not be considered operationally assured merely because some
 }
 ```
 
-The report distinguishes:
-
-- fresh evidence
-- stale evidence
-- future-dated evidence
-- evidence with no trusted timestamp
-- requirements that have evidence but no **fresh** evidence
-
-Timestamps must include a timezone. The command exits non-zero when the configured assurance policy fails.
+The report distinguishes fresh, stale, future-dated, and missing-timestamp evidence and identifies requirements with evidence but no **fresh** evidence.
 
 ## GitHub import semantics
 
@@ -105,20 +172,7 @@ GH:acme/customer-platform:ISSUE:12
 GH:acme/customer-platform:PR:31
 ```
 
-Issue labels are mapped to canonical artifact types through config. Pull requests default to `change`. References are not guessed from semantic similarity: only explicit references in PR text or `linked_issues` create edges. Missing issue numbers are emitted under `import_diagnostics.unresolved_issue_references`.
-
-Example config:
-
-```json
-{
-  "label_type_map": {
-    "requirement": "requirement",
-    "bug": "defect"
-  },
-  "default_issue_type": "requirement",
-  "pull_request_type": "change"
-}
-```
+References are not guessed from semantic similarity: only explicit references in PR text or `linked_issues` create edges.
 
 ## Quality policy
 
@@ -131,8 +185,6 @@ Example config:
   "max_requirements_without_evidence": 1
 }
 ```
-
-The quality command exits non-zero when policy fails, so the same rules become a GitHub Actions gate.
 
 ## CSV import manifest
 
@@ -160,22 +212,14 @@ The quality command exits non-zero when policy fails, so the same rules become a
 
 ## Reusable graph explorer
 
-Open `docs/index.html` directly in a browser. No build step or external JavaScript dependency is required.
-
-It accepts:
-
-- Project Evidence Graph: `nodes` + `links`
-- Data Relationship Map: `nodes` + `relationships`
-- Cutover Graph: `tasks` + `depends_on`
-
-The explorer supports local JSON loading, filtering, grouped SVG visualization, and node/connection inspection.
+Open `docs/index.html` directly in a browser. No build step or external JavaScript dependency is required. It accepts Project Evidence Graph (`nodes` + `links`), Data Relationship Map (`nodes` + `relationships`), and Cutover Graph (`tasks` + `depends_on`).
 
 ## Canonical model
 
 ```json
 {
   "nodes": [
-    {"id": "REQ-001", "type": "requirement"},
+    {"id": "REQ-001", "type": "requirement", "risk": "high"},
     {"id": "DEC-001", "type": "decision"},
     {"id": "TEST-001", "type": "test"},
     {"id": "EVID-001", "type": "evidence", "observed_at": "2026-08-20T10:00:00Z"}
@@ -192,12 +236,11 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 ## Product direction
 
-1. Jira/ALM export profiles on top of the generic importer.
-2. Risk-weighted coverage and assurance policy profiles.
-3. Generated Markdown/HTML release and audit reports.
-4. Stable cross-repository references to Mapping as Code, Interface as Code, Process as Code, Reconciliation as Code, and Cutover Graph.
-5. Compact machine-readable project context for agents.
-6. Release/cutover evidence packs generated from the graph.
+1. Stable `eac://` cross-repository references to Mapping as Code, Interface as Code, Process as Code, Reconciliation as Code, Cutover Graph, and other domain tools.
+2. Generated Markdown/HTML release and audit reports.
+3. Compact machine-readable project context for agents.
+4. Release/cutover evidence packs generated from the graph.
+5. Historical assurance/rationale drift across graph snapshots.
 
 ## Design principles
 
@@ -205,9 +248,9 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 - deterministic coverage and policy logic
 - explicit references over guessed traceability
 - provenance-preserving imports
-- freshness-aware evidence assurance
+- freshness-aware and risk-aware evidence assurance
+- vendor-neutral core with vendor adapters at the boundary
 - versionable and portable state
-- vendor-neutral core
 - Git-friendly outputs
 - synthetic examples safe to publish
 
@@ -225,4 +268,4 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 ## Status
 
-**MVP / active development.** CSV and GitHub ingestion, provenance, validation, traceability, impact analysis, raw and fresh-evidence coverage, freshness policies, quality gates, reusable graph exploration, examples, tests, and CI are implemented.
+**MVP / active development.** CSV, GitHub, Jira and profile-driven work-item ingestion; provenance; validation; traceability; impact; raw/fresh/risk-weighted coverage; policy gates; reusable graph exploration; examples; tests; and CI are implemented.
