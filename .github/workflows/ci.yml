@@ -19,3 +19,5 @@ jobs:
       - run: python quality_gate.py examples/customer-change.json examples/quality-policy.json
       - run: python csv_adapter.py examples/csv/manifest.json --output /tmp/project-evidence.json
       - run: python evidence_graph.py /tmp/project-evidence.json analyze
+      - run: python github_adapter.py examples/github/export.json --config examples/github/config.json --output /tmp/github-evidence.json
+      - run: python evidence_graph.py /tmp/github-evidence.json analyze
