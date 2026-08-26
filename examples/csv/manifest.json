@@ -1,0 +1,26 @@
+{
+  "artifact_sources": [
+    {
+      "file": "requirements.csv",
+      "id": "{REQ_ID}",
+      "type": "requirement",
+      "title": "{TITLE}",
+      "fields": {"risk": "{RISK}"}
+    },
+    {
+      "file": "tests.csv",
+      "id": "{TEST_ID}",
+      "type": "test",
+      "title": "{TITLE}",
+      "fields": {"status": "{STATUS}"}
+    }
+  ],
+  "link_sources": [
+    {
+      "file": "links.csv",
+      "from": "{FROM_ID}",
+      "to": "{TO_ID}",
+      "type": "{RELATION}"
+    }
+  ]
+}
