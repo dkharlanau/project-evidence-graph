@@ -23,17 +23,18 @@
 - cross-repository invalid/duplicate/unresolved reference diagnostics
 - consolidated Markdown/HTML project assurance review
 - one explicit review decision across supplied quality/freshness/risk policy gates
+- compact bounded project context for agents
+- deterministic `context_id` for reproducible context slices
 - reusable zero-build browser graph explorer
 - realistic traceability/freshness/risk/external-work-item/cross-repository examples
 - unit tests and GitHub Actions CI
 
-## Now — project context and evidence packs
+## Now — evidence packs and domain integration
 
-1. Expose a compact machine-readable project context for agents.
-2. Generate release and cutover evidence packs from bounded graph slices.
-3. Import Reconciliation as Code results as evidence/control artifacts.
-4. Ingest Cutover Graph tasks/checkpoints/evidence by stable refs.
-5. Emit stable `eac://` refs from more domain repos so project packs need less manual linking.
+1. Generate release and cutover evidence packs from bounded graph slices.
+2. Import Reconciliation as Code results as evidence/control artifacts.
+3. Ingest Cutover Graph tasks/checkpoints/evidence by stable refs.
+4. Emit stable `eac://` refs from more domain repos so project packs need less manual linking.
 
 ## Next — historical assurance
 
@@ -53,4 +54,4 @@
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, and can that state be reviewed in one reproducible release artifact?
+> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, can that state be reviewed in one reproducible release artifact, and can an agent receive a bounded context package that identifies exactly which project state it consumed?
