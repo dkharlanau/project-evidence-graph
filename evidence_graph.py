@@ -69,15 +69,21 @@ def validate(graph: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def reachable(graph: dict[str, Any], start: str) -> set[str]:
+def _adjacency(graph: dict[str, Any], reverse: bool = False) -> dict[str, list[str]]:
     nodes, _ = _index(graph)
     adjacency: dict[str, list[str]] = defaultdict(list)
     for link in graph.get("links", []):
         source = str(link.get("from", ""))
         target = str(link.get("to", ""))
         if source in nodes and target in nodes:
-            adjacency[source].append(target)
+            left, right = (target, source) if reverse else (source, target)
+            adjacency[left].append(right)
+    return adjacency
 
+
+def reachable(graph: dict[str, Any], start: str, reverse: bool = False) -> set[str]:
+    nodes, _ = _index(graph)
+    adjacency = _adjacency(graph, reverse=reverse)
     visited = {start} if start in nodes else set()
     queue = deque(visited)
     while queue:
@@ -93,12 +99,7 @@ def shortest_path(graph: dict[str, Any], start: str, end: str) -> list[str]:
     nodes, _ = _index(graph)
     if start not in nodes or end not in nodes:
         return []
-    adjacency: dict[str, list[str]] = defaultdict(list)
-    for link in graph.get("links", []):
-        source = str(link.get("from", ""))
-        target = str(link.get("to", ""))
-        if source in nodes and target in nodes:
-            adjacency[source].append(target)
+    adjacency = _adjacency(graph)
 
     queue = deque([(start, [start])])
     visited = {start}
@@ -111,6 +112,30 @@ def shortest_path(graph: dict[str, Any], start: str, end: str) -> list[str]:
                 visited.add(target)
                 queue.append((target, path + [target]))
     return []
+
+
+def impact(graph: dict[str, Any], node_id: str) -> dict[str, Any]:
+    nodes, _ = _index(graph)
+    if node_id not in nodes:
+        return {"node": node_id, "found": False, "upstream": [], "downstream": []}
+
+    upstream = sorted(reachable(graph, node_id, reverse=True) - {node_id})
+    downstream = sorted(reachable(graph, node_id) - {node_id})
+
+    def group(ids: list[str]) -> dict[str, list[str]]:
+        grouped: dict[str, list[str]] = defaultdict(list)
+        for item_id in ids:
+            grouped[str(nodes[item_id].get("type", "other"))].append(item_id)
+        return dict(sorted(grouped.items()))
+
+    return {
+        "node": node_id,
+        "found": True,
+        "upstream": upstream,
+        "downstream": downstream,
+        "upstream_by_type": group(upstream),
+        "downstream_by_type": group(downstream),
+    }
 
 
 def traceability(graph: dict[str, Any]) -> dict[str, Any]:
@@ -165,6 +190,8 @@ def main() -> int:
     path_parser = sub.add_parser("path")
     path_parser.add_argument("from_id")
     path_parser.add_argument("to_id")
+    impact_parser = sub.add_parser("impact")
+    impact_parser.add_argument("node_id")
     args = parser.parse_args()
 
     graph = load_graph(args.graph)
@@ -172,6 +199,10 @@ def main() -> int:
         path = shortest_path(graph, args.from_id, args.to_id)
         print(" -> ".join(path) if path else "NO_PATH")
         return 0 if path else 2
+    if args.command == "impact":
+        result = impact(graph, args.node_id)
+        print(json.dumps(result, indent=2))
+        return 0 if result["found"] else 2
 
     result = build_report(graph)
     print(json.dumps(result, indent=2))
