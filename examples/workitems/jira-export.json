@@ -1,0 +1,35 @@
+{
+  "issues": [
+    {
+      "key": "MDG-101",
+      "self": "https://jira.example/rest/api/3/issue/MDG-101",
+      "fields": {
+        "project": {"key": "MDG"},
+        "issuetype": {"name": "Story"},
+        "summary": "Customer country must replicate to S4",
+        "status": {"name": "Done"},
+        "priority": {"name": "High"},
+        "updated": "2026-08-20T10:00:00+00:00",
+        "issuelinks": [
+          {
+            "type": {"name": "Blocks", "outward": "blocks", "inward": "is blocked by"},
+            "outwardIssue": {"key": "MDG-102"}
+          }
+        ]
+      }
+    },
+    {
+      "key": "MDG-102",
+      "self": "https://jira.example/rest/api/3/issue/MDG-102",
+      "fields": {
+        "project": {"key": "MDG"},
+        "issuetype": {"name": "Bug"},
+        "summary": "Country missing after replication",
+        "status": {"name": "Open"},
+        "priority": {"name": "Medium"},
+        "updated": "2026-08-21T09:15:00+00:00",
+        "issuelinks": []
+      }
+    }
+  ]
+}
