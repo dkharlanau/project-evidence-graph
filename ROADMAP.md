@@ -18,6 +18,8 @@
 - GitHub Issues/PR JSON import with explicit-reference traceability and unresolved-reference diagnostics
 - built-in Jira work-item import profile
 - profile-driven ALM/other tracker import with explicit links only
+- Reconciliation-as-Code evidence v1 import with pass->evidence / fail->defect semantics
+- stable reconciliation run/check `eac://` references and preserved fingerprints
 - stable `eac://` cross-repository artifact materialization
 - explicit local<->external and external<->external traceability links
 - cross-repository invalid/duplicate/unresolved reference diagnostics
@@ -26,15 +28,15 @@
 - compact bounded project context for agents
 - deterministic `context_id` for reproducible context slices
 - reusable zero-build browser graph explorer
-- realistic traceability/freshness/risk/external-work-item/cross-repository examples
+- realistic traceability/freshness/risk/external-work-item/reconciliation/cross-repository examples
 - unit tests and GitHub Actions CI
 
-## Now — evidence packs and domain integration
+## Now — evidence packs and cutover integration
 
 1. Generate release and cutover evidence packs from bounded graph slices.
-2. Import Reconciliation as Code results as evidence/control artifacts.
-3. Ingest Cutover Graph tasks/checkpoints/evidence by stable refs.
-4. Emit stable `eac://` refs from more domain repos so project packs need less manual linking.
+2. Ingest Cutover Graph tasks/checkpoints/evidence by stable refs.
+3. Emit stable `eac://` refs from more domain repos so project packs need less manual linking.
+4. Add a deterministic graph-fragment merge layer for imported domain evidence and project bridge links.
 
 ## Next — historical assurance
 
@@ -54,4 +56,4 @@
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, can that state be reviewed in one reproducible release artifact, and can an agent receive a bounded context package that identifies exactly which project state it consumed?
+> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, can that state be reviewed in one reproducible release artifact, and can an agent receive a bounded context package that identifies exactly which project state it consumed?
