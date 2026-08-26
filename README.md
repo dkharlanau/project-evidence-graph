@@ -11,7 +11,10 @@ Project Evidence Graph models traceability as data first. A matrix, quality gate
 ## Current capabilities
 
 - import ordinary CSV requirements/tests/links through a manifest
-- preserve source file + row provenance
+- import saved GitHub Issues/PR JSON exports with stable canonical IDs
+- preserve source provenance and canonical GitHub URLs
+- create GitHub traceability only from explicit `#issue` or `linked_issues` references
+- report unresolved GitHub references separately instead of inventing links
 - validate artifact nodes and links
 - detect duplicate nodes/links, broken references, and invalid artifact types
 - trace directed paths between artifacts
@@ -47,13 +50,46 @@ python csv_adapter.py examples/csv/manifest.json --output project-evidence.json
 python evidence_graph.py project-evidence.json analyze
 ```
 
+Build a graph from a saved GitHub Issues/PR export:
+
+```bash
+python github_adapter.py examples/github/export.json \
+  --config examples/github/config.json \
+  --output github-evidence.json
+python evidence_graph.py github-evidence.json analyze
+```
+
 Run tests:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-The bundled examples intentionally contain traceability gaps so reports demonstrate missing coverage instead of only a perfect graph.
+The bundled examples intentionally contain traceability gaps or unresolved references so reports demonstrate real diagnostics rather than only a perfect graph.
+
+## GitHub import semantics
+
+GitHub objects receive stable IDs such as:
+
+```text
+GH:acme/customer-platform:ISSUE:12
+GH:acme/customer-platform:PR:31
+```
+
+Issue labels are mapped to canonical artifact types through config. Pull requests default to `change`. References are not guessed from semantic similarity: only explicit references in PR text or `linked_issues` create edges. Missing issue numbers are emitted under `import_diagnostics.unresolved_issue_references`.
+
+Example config:
+
+```json
+{
+  "label_type_map": {
+    "requirement": "requirement",
+    "bug": "defect"
+  },
+  "default_issue_type": "requirement",
+  "pull_request_type": "change"
+}
+```
 
 ## Quality policy
 
@@ -127,7 +163,7 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 ## Product direction
 
-1. GitHub Issues/PR and Jira/ALM export adapters.
+1. Jira/ALM export profiles on top of the generic importer.
 2. Evidence freshness and stale-evidence detection.
 3. Risk-weighted coverage and policy profiles.
 4. Generated Markdown/HTML release and audit reports.
@@ -139,6 +175,7 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 - traceability as graph data, not a manually maintained matrix
 - deterministic coverage and policy logic
+- explicit references over guessed traceability
 - provenance-preserving imports
 - versionable and portable state
 - vendor-neutral core
@@ -159,4 +196,4 @@ Supported first-class artifact types are `requirement`, `decision`, `mapping`, `
 
 ## Status
 
-**MVP / active development.** CSV ingestion, provenance, validation, traceability, impact analysis, coverage metrics, policy gates, reusable graph exploration, examples, tests, and CI are implemented.
+**MVP / active development.** CSV and GitHub ingestion, provenance, validation, traceability, impact analysis, coverage metrics, policy gates, reusable graph exploration, examples, tests, and CI are implemented.
