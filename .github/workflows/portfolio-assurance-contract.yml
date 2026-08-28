@@ -6,6 +6,7 @@ on:
       - .github/workflows/portfolio-assurance-contract.yml
       - cutover_adapter.py
       - docs/CUTOVER-INTEGRATION.md
+      - docs/VISUAL-WORKBENCH-INTEGRATION.md
       - tests/test_cutover_adapter.py
   workflow_dispatch:
   schedule:
@@ -15,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  mapping-rac-cutover-project-evidence:
+  mapping-rac-cutover-project-evidence-visual:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Project Evidence Graph
@@ -42,15 +43,34 @@ jobs:
           ref: main
           path: _deps/cutover-graph
 
+      - name: Checkout current Visual Workbench
+        uses: actions/checkout@v4
+        with:
+          repository: dkharlanau/visual-workbench
+          ref: main
+          path: _deps/visual-workbench
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Install current Mapping and Reconciliation CLIs
         run: |
           python -m pip install ./_deps/mapping-as-code
           python -m pip install ./_deps/reconciliation-as-code
+
+      - name: Build current Visual Workbench
+        run: |
+          npm --prefix _deps/visual-workbench install --no-audit --no-fund
+          npm --prefix _deps/visual-workbench run typecheck
+          npm --prefix _deps/visual-workbench test
+          npm --prefix _deps/visual-workbench run build
 
       - name: Build a linked RAC contract from current Mapping as Code
         run: |
@@ -189,6 +209,69 @@ jobs:
           assert entry['configuration_sha256'] == evidence['configuration_sha256']
           PY
 
+      - name: Preserve assurance semantics through Visual Workbench
+        run: |
+          node --input-type=module - <<'JS'
+          import { readFile, writeFile } from 'node:fs/promises';
+          import { adaptProjectEvidenceGraph, projectVisualView } from './_deps/visual-workbench/dist/index.js';
+
+          const racRef = (await readFile('/tmp/rac-ref.txt', 'utf8')).trim();
+          const verifiedInput = JSON.parse(await readFile('/tmp/verified-project-fragment.json', 'utf8'));
+          const unverifiedInput = JSON.parse(await readFile('/tmp/unverified-project-fragment.json', 'utf8'));
+
+          const verifiedVisual = adaptProjectEvidenceGraph(verifiedInput, 'Verified portfolio assurance');
+          const unverifiedVisual = adaptProjectEvidenceGraph(unverifiedInput, 'Fail-closed portfolio assurance');
+          const assuranceView = projectVisualView(verifiedVisual, 'assurance');
+          const exceptionView = projectVisualView(unverifiedVisual, 'exceptions');
+
+          const externalRef = verifiedVisual.nodes.find((node) => node.tags.includes('external-reference'));
+          const assuranceBridge = verifiedVisual.edges.find((edge) => edge.label === 'substantiated by');
+          const failedCheckpoint = unverifiedVisual.nodes.find((node) => node.type === 'risk' && node.status === 'danger');
+
+          if (!externalRef || externalRef.subtitle !== racRef) throw new Error('Visual projection lost the RAC logical evidence reference.');
+          if (!assuranceBridge || assuranceBridge.type !== 'control') throw new Error('Visual projection lost the assurance bridge semantics.');
+          if (!failedCheckpoint) throw new Error('Visual projection lost the fail-closed checkpoint state.');
+          if (!assuranceView.nodes.some((node) => node.tags.includes('external-reference'))) throw new Error('Assurance view omitted the external evidence reference.');
+          if (!exceptionView.nodes.some((node) => node.status === 'danger')) throw new Error('Exception view omitted the failed checkpoint.');
+
+          const summary = {
+            schema_version: '0.1',
+            rac_ref: racRef,
+            verified: {
+              nodes: verifiedVisual.nodes.length,
+              edges: verifiedVisual.edges.length,
+              external_reference_preserved: true,
+              assurance_bridge_preserved: true,
+            },
+            unverified: {
+              nodes: unverifiedVisual.nodes.length,
+              edges: unverifiedVisual.edges.length,
+              failed_checkpoint_preserved: true,
+            },
+            scope: 'Visual projection proof only; assurance truth remains owned by upstream artifacts.',
+          };
+          await writeFile('/tmp/visual-assurance-summary.json', JSON.stringify(summary, null, 2) + '\n', 'utf8');
+          console.log(JSON.stringify(summary, null, 2));
+          JS
+
+          node _deps/visual-workbench/dist/cli.js render-project-evidence \
+            /tmp/verified-project-fragment.json \
+            --view assurance \
+            -o /tmp/verified-assurance.svg
+          node _deps/visual-workbench/dist/cli.js render-project-evidence \
+            /tmp/verified-project-fragment.json \
+            --view assurance \
+            --format html \
+            -o /tmp/verified-assurance.html
+          node _deps/visual-workbench/dist/cli.js render-project-evidence \
+            /tmp/unverified-project-fragment.json \
+            --view exceptions \
+            -o /tmp/unverified-exceptions.svg
+
+          grep -q '<svg' /tmp/verified-assurance.svg
+          grep -q '<!doctype html>' /tmp/verified-assurance.html
+          grep -q '<svg' /tmp/unverified-exceptions.svg
+
       - name: Build reproducible assurance receipt
         env:
           GITHUB_RUN_ID_VALUE: ${{ github.run_id }}
@@ -205,6 +288,10 @@ jobs:
           cp /tmp/verified-cutover-artifacts.json build/portfolio-assurance/verified-cutover-artifacts.json
           cp /tmp/unverified-project-fragment.json build/portfolio-assurance/unverified-project-fragment.json
           cp /tmp/verified-project-fragment.json build/portfolio-assurance/verified-project-fragment.json
+          cp /tmp/visual-assurance-summary.json build/portfolio-assurance/visual-assurance-summary.json
+          cp /tmp/verified-assurance.svg build/portfolio-assurance/verified-assurance.svg
+          cp /tmp/verified-assurance.html build/portfolio-assurance/verified-assurance.html
+          cp /tmp/unverified-exceptions.svg build/portfolio-assurance/unverified-exceptions.svg
           python - <<'PY'
           import hashlib
           import json
@@ -230,6 +317,7 @@ jobs:
 
           verified = json.loads((out / 'verified-project-fragment.json').read_text(encoding='utf-8'))
           unverified = json.loads((out / 'unverified-project-fragment.json').read_text(encoding='utf-8'))
+          visual = json.loads((out / 'visual-assurance-summary.json').read_text(encoding='utf-8'))
           verified_checkpoint = next(node for node in verified['nodes'] if node['id'].endswith('/checkpoint/reconcile-customers'))
           unverified_checkpoint = next(node for node in unverified['nodes'] if node['id'].endswith('/checkpoint/reconcile-customers'))
 
@@ -241,6 +329,7 @@ jobs:
                   'mapping-as-code': {'ref': 'main', 'commit': git_sha('_deps/mapping-as-code')},
                   'reconciliation-as-code': {'ref': 'main', 'commit': git_sha('_deps/reconciliation-as-code')},
                   'cutover-graph': {'ref': 'main', 'commit': git_sha('_deps/cutover-graph')},
+                  'visual-workbench': {'ref': 'main', 'commit': git_sha('_deps/visual-workbench')},
               },
               'workflow': {
                   'run_id': os.environ['GITHUB_RUN_ID_VALUE'],
@@ -250,9 +339,12 @@ jobs:
               'assertions': {
                   'verified_path_passed': verified_checkpoint['type'] == 'evidence' and verified_checkpoint['status'] == 'passed' and verified['cutover_import_diagnostics']['assurance_complete'] is True,
                   'unverified_path_failed_closed': unverified_checkpoint['type'] == 'defect' and unverified_checkpoint['metadata']['assurance_passed'] is False and unverified['cutover_import_diagnostics']['assurance_complete'] is False,
+                  'visual_external_reference_preserved': visual['verified']['external_reference_preserved'] is True,
+                  'visual_assurance_bridge_preserved': visual['verified']['assurance_bridge_preserved'] is True,
+                  'visual_fail_closed_state_preserved': visual['unverified']['failed_checkpoint_preserved'] is True,
               },
               'artifacts': artifacts,
-              'scope': 'Synthetic interoperability evidence for exact checked-out commits; not an external validation or a pinned release-compatibility claim.',
+              'scope': 'Synthetic interoperability evidence for exact checked-out commits across five repositories; not an external validation or a pinned release-compatibility claim.',
           }
           assert all(receipt['assertions'].values())
           (out / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
