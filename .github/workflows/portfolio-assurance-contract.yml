@@ -21,12 +21,12 @@ jobs:
       - name: Checkout Project Evidence Graph
         uses: actions/checkout@v4
 
-      - name: Checkout current Cutover Graph
+      - name: Checkout current Mapping as Code
         uses: actions/checkout@v4
         with:
-          repository: dkharlanau/cutover-graph
+          repository: dkharlanau/mapping-as-code
           ref: main
-          path: _deps/cutover-graph
+          path: _deps/mapping-as-code
 
       - name: Checkout current Reconciliation as Code
         uses: actions/checkout@v4
@@ -35,22 +35,85 @@ jobs:
           ref: main
           path: _deps/reconciliation-as-code
 
+      - name: Checkout current Cutover Graph
+        uses: actions/checkout@v4
+        with:
+          repository: dkharlanau/cutover-graph
+          ref: main
+          path: _deps/cutover-graph
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install current Reconciliation as Code
-        run: python -m pip install ./_deps/reconciliation-as-code
-
-      - name: Generate live RAC evidence from its pinned Mapping as Code artifact
+      - name: Install current Mapping and Reconciliation CLIs
         run: |
-          rac validate _deps/reconciliation-as-code/examples/mapping-as-code-bridge/reconciliation.yaml
-          rac run _deps/reconciliation-as-code/examples/mapping-as-code-bridge/reconciliation.yaml \
+          python -m pip install ./_deps/mapping-as-code
+          python -m pip install ./_deps/reconciliation-as-code
+
+      - name: Build a linked RAC contract from current Mapping as Code
+        run: |
+          mkdir -p /tmp/portfolio-assurance
+          cp _deps/mapping-as-code/examples/customer-master.yaml /tmp/portfolio-assurance/mapping.yaml
+          cat > /tmp/portfolio-assurance/legacy.csv <<'CSV'
+          customer_id,name,country
+          1001,Example GmbH,DE
+          1002,Example Inc,US
+          CSV
+          cat > /tmp/portfolio-assurance/s4.csv <<'CSV'
+          BusinessPartner,OrganizationBPName1,Country
+          1001,Example GmbH,DE
+          1002,Example Inc,US
+          CSV
+          SHA=$(sha256sum /tmp/portfolio-assurance/mapping.yaml | cut -d' ' -f1)
+          map-code project /tmp/portfolio-assurance/mapping.yaml \
+            --target reconciliation-as-code \
+            --source-file legacy.csv \
+            --target-file s4.csv \
+            --source-key customer_id \
+            --target-key BusinessPartner \
+            --mapping-artifact-file mapping.yaml \
+            --mapping-artifact-sha256 "$SHA" \
+            --format yaml \
+            -o /tmp/portfolio-assurance/reconciliation.yaml
+
+      - name: Run generated contract through current Reconciliation as Code
+        run: |
+          rac validate /tmp/portfolio-assurance/reconciliation.yaml
+          rac run /tmp/portfolio-assurance/reconciliation.yaml \
             --evidence /tmp/rac-evidence.json \
             --report /tmp/rac-evidence.md
 
-      - name: Bind the generated RAC run into the Cutover checkpoint
+      - name: Assert current Mapping identity survived into RAC evidence
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import yaml
+          from pathlib import Path
+
+          mapping_path = Path('/tmp/portfolio-assurance/mapping.yaml')
+          mapping = yaml.safe_load(mapping_path.read_text(encoding='utf-8'))
+          spec = yaml.safe_load(Path('/tmp/portfolio-assurance/reconciliation.yaml').read_text(encoding='utf-8'))
+          evidence = json.loads(Path('/tmp/rac-evidence.json').read_text(encoding='utf-8'))
+
+          assert spec['generated_from']['tool'] == 'mapping-as-code'
+          assert spec['generated_from']['projection_mode'] == 'linked_source'
+          assert spec['generated_from']['mapping_id'] == mapping['mapping']['id']
+          artifact = spec['mapping_artifacts']['mapping-source']
+          assert artifact['file'] == 'mapping.yaml'
+          assert artifact['sha256'] == hashlib.sha256(mapping_path.read_bytes()).hexdigest()
+
+          assert evidence['status'] == 'passed'
+          provenance = evidence['inputs']['mapping:mapping-source']
+          assert provenance['mapping_id'] == mapping['mapping']['id']
+          assert provenance['fields'] == ['customer-country']
+          assert provenance['sha256'] == artifact['sha256']
+          assert evidence['configuration_sha256']
+          PY
+
+      - name: Bind the generated RAC run into the current Cutover checkpoint
         run: |
           python - <<'PY'
           import json
