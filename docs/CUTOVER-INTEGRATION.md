@@ -85,3 +85,22 @@ A checkpoint whose external evidence is missing, failed, or not accompanied by v
 External bridges are still retained in the unverified case so the missing assurance boundary remains inspectable instead of disappearing.
 
 An invalid Cutover artifact index is rejected rather than partially imported.
+
+## Moving-main drift evidence and reproducibility
+
+The `Portfolio assurance contract` workflow deliberately checks out the current `main` of Mapping as Code, Reconciliation as Code and Cutover Graph. That makes the scheduled run a **drift detector**: it answers whether the current repository heads still interoperate under the documented assurance semantics.
+
+A moving-main green check is not a pinned release-compatibility claim. To make each run auditable, the workflow retains a finite-lived synthetic `portfolio-assurance-*` Actions artifact containing:
+
+- the exact checked-out commit SHA for all four repositories;
+- the linked Mapping and generated RAC contracts;
+- RAC evidence and Cutover evidence registry;
+- verified and deliberately unverified Cutover artifact indexes;
+- the corresponding Project Evidence fragments;
+- a `receipt.json` with SHA-256 and byte size for every retained artifact;
+- explicit `verified_path_passed` and `unverified_path_failed_closed` assertions;
+- GitHub workflow run ID, attempt and event.
+
+The bundle contains only the synthetic reference scenario. It is retained for 90 days and is intended for regression/audit reproduction, not as a central artifact registry or long-term enterprise evidence store.
+
+For a release or customer assurance claim, pin the actual product versions/commits separately and retain the relevant evidence according to that delivery's governance and privacy requirements. A scheduled current-main receipt demonstrates tested interoperability for the recorded commits only.
