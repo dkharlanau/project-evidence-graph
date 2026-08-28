@@ -188,3 +188,81 @@ jobs:
           assert verification['configuration_sha256'] == evidence['configuration_sha256']
           assert entry['configuration_sha256'] == evidence['configuration_sha256']
           PY
+
+      - name: Build reproducible assurance receipt
+        env:
+          GITHUB_RUN_ID_VALUE: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT_VALUE: ${{ github.run_attempt }}
+          GITHUB_EVENT_NAME_VALUE: ${{ github.event_name }}
+        run: |
+          mkdir -p build/portfolio-assurance
+          cp /tmp/portfolio-assurance/mapping.yaml build/portfolio-assurance/mapping.yaml
+          cp /tmp/portfolio-assurance/reconciliation.yaml build/portfolio-assurance/reconciliation.yaml
+          cp /tmp/rac-evidence.json build/portfolio-assurance/rac-evidence.json
+          cp /tmp/rac-evidence.md build/portfolio-assurance/rac-evidence.md
+          cp /tmp/registry.json build/portfolio-assurance/cutover-evidence-registry.json
+          cp /tmp/unverified-cutover-artifacts.json build/portfolio-assurance/unverified-cutover-artifacts.json
+          cp /tmp/verified-cutover-artifacts.json build/portfolio-assurance/verified-cutover-artifacts.json
+          cp /tmp/unverified-project-fragment.json build/portfolio-assurance/unverified-project-fragment.json
+          cp /tmp/verified-project-fragment.json build/portfolio-assurance/verified-project-fragment.json
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          out = Path('build/portfolio-assurance')
+
+          def git_sha(path: str) -> str:
+              return subprocess.check_output(['git', '-C', path, 'rev-parse', 'HEAD'], text=True).strip()
+
+          def sha256(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          artifacts = {}
+          for path in sorted(out.iterdir()):
+              if path.is_file() and path.name != 'receipt.json':
+                  artifacts[path.name] = {
+                      'sha256': sha256(path),
+                      'bytes': path.stat().st_size,
+                  }
+
+          verified = json.loads((out / 'verified-project-fragment.json').read_text(encoding='utf-8'))
+          unverified = json.loads((out / 'unverified-project-fragment.json').read_text(encoding='utf-8'))
+          verified_checkpoint = next(node for node in verified['nodes'] if node['id'].endswith('/checkpoint/reconcile-customers'))
+          unverified_checkpoint = next(node for node in unverified['nodes'] if node['id'].endswith('/checkpoint/reconcile-customers'))
+
+          receipt = {
+              'schema_version': '0.1',
+              'purpose': 'moving-main-cross-repository-drift-assurance',
+              'repositories': {
+                  'project-evidence-graph': {'ref': 'workflow-checkout', 'commit': git_sha('.')},
+                  'mapping-as-code': {'ref': 'main', 'commit': git_sha('_deps/mapping-as-code')},
+                  'reconciliation-as-code': {'ref': 'main', 'commit': git_sha('_deps/reconciliation-as-code')},
+                  'cutover-graph': {'ref': 'main', 'commit': git_sha('_deps/cutover-graph')},
+              },
+              'workflow': {
+                  'run_id': os.environ['GITHUB_RUN_ID_VALUE'],
+                  'run_attempt': os.environ['GITHUB_RUN_ATTEMPT_VALUE'],
+                  'event': os.environ['GITHUB_EVENT_NAME_VALUE'],
+              },
+              'assertions': {
+                  'verified_path_passed': verified_checkpoint['type'] == 'evidence' and verified_checkpoint['status'] == 'passed' and verified['cutover_import_diagnostics']['assurance_complete'] is True,
+                  'unverified_path_failed_closed': unverified_checkpoint['type'] == 'defect' and unverified_checkpoint['metadata']['assurance_passed'] is False and unverified['cutover_import_diagnostics']['assurance_complete'] is False,
+              },
+              'artifacts': artifacts,
+              'scope': 'Synthetic interoperability evidence for exact checked-out commits; not an external validation or a pinned release-compatibility claim.',
+          }
+          assert all(receipt['assertions'].values())
+          (out / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(receipt, indent=2))
+          PY
+
+      - name: Upload assurance receipt bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-assurance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/portfolio-assurance
+          if-no-files-found: error
+          retention-days: 90
