@@ -1,0 +1,127 @@
+name: Portfolio assurance contract
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/portfolio-assurance-contract.yml
+      - cutover_adapter.py
+      - docs/CUTOVER-INTEGRATION.md
+      - tests/test_cutover_adapter.py
+  workflow_dispatch:
+  schedule:
+    - cron: "31 5 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  mapping-rac-cutover-project-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project Evidence Graph
+        uses: actions/checkout@v4
+
+      - name: Checkout current Cutover Graph
+        uses: actions/checkout@v4
+        with:
+          repository: dkharlanau/cutover-graph
+          ref: main
+          path: _deps/cutover-graph
+
+      - name: Checkout current Reconciliation as Code
+        uses: actions/checkout@v4
+        with:
+          repository: dkharlanau/reconciliation-as-code
+          ref: main
+          path: _deps/reconciliation-as-code
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install current Reconciliation as Code
+        run: python -m pip install ./_deps/reconciliation-as-code
+
+      - name: Generate live RAC evidence from its pinned Mapping as Code artifact
+        run: |
+          rac validate _deps/reconciliation-as-code/examples/mapping-as-code-bridge/reconciliation.yaml
+          rac run _deps/reconciliation-as-code/examples/mapping-as-code-bridge/reconciliation.yaml \
+            --evidence /tmp/rac-evidence.json \
+            --report /tmp/rac-evidence.md
+
+      - name: Bind the generated RAC run into the Cutover checkpoint
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, '_deps/cutover-graph')
+          from external_evidence import reconciliation_entry
+
+          entry = reconciliation_entry('/tmp/rac-evidence.json')
+          plan = json.loads(Path('_deps/cutover-graph/examples/checkpoint-cutover.json').read_text(encoding='utf-8'))
+          plan['tasks'][1]['checkpoint']['evidence'][0]['ref'] = entry['ref']
+          Path('/tmp/live-cutover.json').write_text(json.dumps(plan, indent=2) + '\n', encoding='utf-8')
+          Path('/tmp/rac-ref.txt').write_text(entry['ref'], encoding='utf-8')
+          PY
+
+      - name: Build Cutover evidence registry and both artifact export modes
+        run: |
+          python _deps/cutover-graph/external_evidence.py build /tmp/registry.json /tmp/rac-evidence.json > /tmp/registry-output.json
+          python _deps/cutover-graph/cutover_artifacts.py /tmp/live-cutover.json --output /tmp/unverified-cutover-artifacts.json
+          python _deps/cutover-graph/cutover_artifacts.py /tmp/live-cutover.json --registry /tmp/registry.json --output /tmp/verified-cutover-artifacts.json
+
+      - name: Import both Cutover indexes into Project Evidence Graph
+        run: |
+          python cutover_adapter.py /tmp/unverified-cutover-artifacts.json --output /tmp/unverified-project-fragment.json
+          python cutover_adapter.py /tmp/verified-cutover-artifacts.json --output /tmp/verified-project-fragment.json
+
+      - name: Assert fail-closed and verified assurance behavior end to end
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from evidence_graph import validate
+
+          rac_ref = Path('/tmp/rac-ref.txt').read_text(encoding='utf-8').strip()
+          evidence = json.loads(Path('/tmp/rac-evidence.json').read_text(encoding='utf-8'))
+          registry = json.loads(Path('/tmp/registry.json').read_text(encoding='utf-8'))
+          raw = json.loads(Path('/tmp/unverified-project-fragment.json').read_text(encoding='utf-8'))
+          verified = json.loads(Path('/tmp/verified-project-fragment.json').read_text(encoding='utf-8'))
+
+          assert validate(raw)['valid'] is True
+          assert validate(verified)['valid'] is True
+
+          raw_checkpoint = next(node for node in raw['nodes'] if node['id'].endswith('/checkpoint/reconcile-customers'))
+          assert raw_checkpoint['type'] == 'defect'
+          assert raw_checkpoint['status'] == 'failed'
+          assert raw_checkpoint['metadata']['assurance_passed'] is False
+          assert raw_checkpoint['metadata']['assurance_mode'] == 'unverified_external'
+          assert raw['cutover_import_diagnostics']['assurance_complete'] is False
+          assert raw['external_bridges'] == [{
+              'from': raw_checkpoint['id'],
+              'to': rac_ref,
+              'type': 'substantiated_by',
+          }]
+
+          checkpoint = next(node for node in verified['nodes'] if node['id'].endswith('/checkpoint/reconcile-customers'))
+          assert checkpoint['type'] == 'evidence'
+          assert checkpoint['status'] == 'passed'
+          assert checkpoint['metadata']['assurance_passed'] is True
+          assert checkpoint['metadata']['assurance_mode'] == 'external_registry'
+          assert verified['cutover_import_diagnostics']['assurance_complete'] is True
+          assert verified['external_bridges'] == [{
+              'from': checkpoint['id'],
+              'to': rac_ref,
+              'type': 'substantiated_by',
+          }]
+
+          verification = checkpoint['metadata']['verifications'][0]
+          entry = registry['entries'][0]
+          assert verification['ref'] == rac_ref
+          assert verification['document_sha256'] == entry['document_sha256']
+          assert verification['configuration_sha256'] == evidence['configuration_sha256']
+          assert entry['configuration_sha256'] == evidence['configuration_sha256']
+          PY

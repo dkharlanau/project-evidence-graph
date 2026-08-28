@@ -11,6 +11,12 @@ class CutoverAdapterTests(unittest.TestCase):
             "schema_version": "0.1",
             "repository": "dkharlanau/cutover-graph",
             "valid": True,
+            "assurance": {
+                "external_registry_supplied": True,
+                "external_checkpoints": 1,
+                "external_checkpoints_verified": 1,
+                "passed": True,
+            },
             "validation": {"plan": {"valid": True}, "contingencies": {"valid": True}},
             "tasks": [
                 {
@@ -32,6 +38,23 @@ class CutoverAdapterTests(unittest.TestCase):
                     "checkpoint": {
                         "artifact_ref": "eac://dkharlanau/cutover-graph/checkpoint/reconcile",
                         "passed": True,
+                        "native_passed": True,
+                        "verification_mode": "external_registry",
+                        "external_evidence_required": True,
+                        "external_evidence_passed": True,
+                        "verifications": [
+                            {
+                                "type": "reconciliation",
+                                "ref": self.reconciliation_ref,
+                                "verified": True,
+                                "reason": "passed",
+                                "status": "passed",
+                                "document_sha256": "d" * 64,
+                                "configuration_sha256": "c" * 64,
+                                "observed_at": "2026-08-28T05:00:00Z",
+                                "kind": "reconciliation-as-code-run",
+                            }
+                        ],
                         "missing_approvals": [],
                         "missing_evidence": [],
                         "duplicate_approvals": [],
@@ -63,12 +86,19 @@ class CutoverAdapterTests(unittest.TestCase):
     def test_tasks_dependencies_and_checkpoint_semantics(self):
         graph = build_graph(self.index)
         self.assertTrue(graph["cutover_import_diagnostics"]["valid"])
+        self.assertTrue(graph["cutover_import_diagnostics"]["assurance_complete"])
         self.assertTrue(validate(graph)["valid"])
         nodes = {node["id"]: node for node in graph["nodes"]}
         self.assertEqual(nodes["eac://dkharlanau/cutover-graph/task/reconcile"]["type"], "change")
         checkpoint = nodes["eac://dkharlanau/cutover-graph/checkpoint/reconcile"]
         self.assertEqual(checkpoint["type"], "evidence")
+        self.assertEqual(checkpoint["status"], "passed")
+        self.assertTrue(checkpoint["metadata"]["assurance_passed"])
+        self.assertEqual(checkpoint["metadata"]["assurance_mode"], "external_registry")
         self.assertEqual(checkpoint["metadata"]["evidence_refs"], [self.reconciliation_ref, "local/report.json"])
+        verification = checkpoint["metadata"]["verifications"][0]
+        self.assertEqual(verification["document_sha256"], "d" * 64)
+        self.assertEqual(verification["configuration_sha256"], "c" * 64)
         self.assertIn({
             "from": "eac://dkharlanau/cutover-graph/task/load",
             "to": "eac://dkharlanau/cutover-graph/task/reconcile",
@@ -86,13 +116,46 @@ class CutoverAdapterTests(unittest.TestCase):
         self.assertNotIn(self.reconciliation_ref, ids)
         self.assertNotIn("local/report.json", ids)
 
-    def test_incomplete_checkpoint_is_defect(self):
-        self.index["tasks"][1]["checkpoint"]["passed"] = False
-        self.index["tasks"][1]["checkpoint"]["missing_approvals"] = ["business"]
+    def test_legacy_passed_external_checkpoint_without_verification_is_not_evidence(self):
+        checkpoint = self.index["tasks"][1]["checkpoint"]
+        checkpoint.pop("verification_mode")
+        checkpoint.pop("external_evidence_passed")
+        checkpoint.pop("verifications")
         graph = build_graph(self.index)
-        checkpoint = next(node for node in graph["nodes"] if node["id"].endswith("/checkpoint/reconcile"))
-        self.assertEqual(checkpoint["type"], "defect")
-        self.assertEqual(checkpoint["status"], "failed")
+        node = next(item for item in graph["nodes"] if item["id"].endswith("/checkpoint/reconcile"))
+        self.assertEqual(node["type"], "defect")
+        self.assertEqual(node["status"], "unverified")
+        self.assertFalse(node["metadata"]["assurance_passed"])
+        self.assertEqual(node["metadata"]["assurance_mode"], "unverified_external")
+        diagnostics = graph["cutover_import_diagnostics"]
+        self.assertTrue(diagnostics["valid"])
+        self.assertFalse(diagnostics["assurance_complete"])
+        self.assertEqual(diagnostics["unverified_external_checkpoints"][0]["reason"], "missing_external_verification_metadata")
+        self.assertEqual(graph["external_bridges"][0]["to"], self.reconciliation_ref)
+
+    def test_incomplete_checkpoint_is_defect(self):
+        checkpoint = self.index["tasks"][1]["checkpoint"]
+        checkpoint["passed"] = False
+        checkpoint["native_passed"] = False
+        checkpoint["external_evidence_passed"] = False
+        checkpoint["missing_approvals"] = ["business"]
+        graph = build_graph(self.index)
+        node = next(item for item in graph["nodes"] if item["id"].endswith("/checkpoint/reconcile"))
+        self.assertEqual(node["type"], "defect")
+        self.assertEqual(node["status"], "failed")
+
+    def test_local_passed_checkpoint_keeps_native_semantics(self):
+        checkpoint = self.index["tasks"][1]["checkpoint"]
+        checkpoint["evidence_refs"] = ["local/report.json"]
+        checkpoint.pop("verification_mode")
+        checkpoint.pop("external_evidence_passed")
+        checkpoint.pop("verifications")
+        graph = build_graph(self.index)
+        node = next(item for item in graph["nodes"] if item["id"].endswith("/checkpoint/reconcile"))
+        self.assertEqual(node["type"], "evidence")
+        self.assertEqual(node["status"], "passed")
+        self.assertEqual(node["metadata"]["assurance_mode"], "native")
+        self.assertTrue(graph["cutover_import_diagnostics"]["assurance_complete"])
 
     def test_contingency_branch_and_task_are_separate_artifacts(self):
         graph = build_graph(self.index)
