@@ -1,6 +1,7 @@
 {
   "schema_version": "0.1",
   "repository": "dkharlanau/data-relationship-map",
+  "observed_at": "2026-08-25T10:00:00Z",
   "valid": true,
   "validation": {
     "valid": true,
