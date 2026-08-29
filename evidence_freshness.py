@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate evidence freshness and fresh-evidence requirement coverage."""
+"""Evaluate current evidence freshness and fresh-evidence requirement coverage."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from evidence_graph import _index, load_graph, reachable
+from evidence_lifecycle import superseded_artifact_ids
 
 
 def parse_iso(value: str) -> datetime:
@@ -46,7 +47,9 @@ def evaluate(graph: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("missing_timestamp must be one of: fail, warn, ignore")
 
     nodes, _ = _index(graph)
-    evidence_ids = sorted(node_id for node_id, node in nodes.items() if node.get("type") == "evidence")
+    all_evidence_ids = sorted(node_id for node_id, node in nodes.items() if node.get("type") == "evidence")
+    superseded_ids = superseded_artifact_ids(graph, {"evidence"})
+    evidence_ids = sorted(node_id for node_id in all_evidence_ids if node_id not in superseded_ids)
     fresh: list[dict[str, Any]] = []
     stale: list[dict[str, Any]] = []
     missing: list[dict[str, Any]] = []
@@ -80,13 +83,16 @@ def evaluate(graph: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
     requirements_without_fresh_evidence = []
     for requirement_id in requirements:
         downstream = reachable(graph, requirement_id) - {requirement_id}
-        all_evidence = sorted(node_id for node_id in downstream if node_id in evidence_ids)
-        fresh_evidence = sorted(node_id for node_id in all_evidence if node_id in fresh_ids)
+        reachable_all_evidence = sorted(node_id for node_id in downstream if node_id in all_evidence_ids)
+        active_evidence = sorted(node_id for node_id in reachable_all_evidence if node_id not in superseded_ids)
+        superseded_evidence = sorted(node_id for node_id in reachable_all_evidence if node_id in superseded_ids)
+        fresh_evidence = sorted(node_id for node_id in active_evidence if node_id in fresh_ids)
         if not fresh_evidence:
             requirements_without_fresh_evidence.append(requirement_id)
         requirement_rows.append({
             "requirement": requirement_id,
-            "evidence": all_evidence,
+            "evidence": active_evidence,
+            "superseded_evidence": superseded_evidence,
             "fresh_evidence": fresh_evidence,
         })
 
@@ -109,6 +115,8 @@ def evaluate(graph: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
         "passed": not failed_checks,
         "as_of": as_of.isoformat().replace("+00:00", "Z"),
         "max_age_days": max_age_days,
+        "active_evidence": evidence_ids,
+        "superseded_evidence": sorted(superseded_ids),
         "fresh": fresh,
         "stale": stale,
         "future": future,
@@ -123,7 +131,7 @@ def evaluate(graph: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Evaluate evidence freshness and fresh-evidence coverage")
+    parser = argparse.ArgumentParser(description="Evaluate current evidence freshness and fresh-evidence coverage")
     parser.add_argument("graph")
     parser.add_argument("policy")
     args = parser.parse_args()
