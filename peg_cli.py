@@ -19,6 +19,7 @@ import project_context
 import project_review
 import quality_gate
 import reconciliation_adapter
+import relationship_adapter
 import risk_assurance
 import workitem_adapter
 
@@ -41,6 +42,7 @@ COMMANDS: dict[str, tuple[Main, str]] = {
     "import-workitems": (workitem_adapter.main, "Import Jira or profile-driven ALM work items"),
     "import-reconciliation": (reconciliation_adapter.main, "Import Reconciliation-as-Code evidence"),
     "import-cutover": (cutover_adapter.main, "Import Cutover Graph artifact/evidence state"),
+    "import-relationship": (relationship_adapter.main, "Import Data Relationship Map objects, relationships and findings"),
 }
 
 
