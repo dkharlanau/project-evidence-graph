@@ -1,6 +1,6 @@
 # Project Evidence Graph
 
-**Evidence-backed project assurance across requirements, decisions, implementation, tests, cutover, defects, changes, and retained proof.**
+**Evidence-backed project assurance across requirements, decisions, implementation, tests, cutover, defects, changes, relationships, and retained proof.**
 
 Project Evidence Graph (`project-evidence-graph`) turns fragmented project artifacts into one deterministic traceability model. The graph is not the report: assurance reviews, coverage, impact, bounded context, historical drift and integrity-verifiable evidence packs are generated from the same versioned state.
 
@@ -8,11 +8,11 @@ The reference use case is enterprise/SAP transformation, but the core model is v
 
 ## The question it answers
 
-A project may have requirements in Jira, mappings in spreadsheets, tests in another tool, reconciliation evidence in a release folder and cutover acceptance in a plan. A green traceability matrix can still hide stale evidence or a requirement whose implementation changed after it was tested.
+A project may have requirements in Jira, mappings in spreadsheets, tests in another tool, reconciliation evidence in a release folder, identity findings in exported data and cutover acceptance in a plan. A green traceability matrix can still hide stale evidence or a requirement whose implementation changed after it was tested.
 
 Project Evidence Graph asks:
 
-> **Why does this exist, where is it implemented, how was it tested, what evidence supports it, is that evidence still current, what changed since the previous trusted state, and what must be re-tested or re-evidenced now?**
+> **Why does this exist, where is it implemented, how was it tested, what evidence supports or challenges it, is that evidence still current, what changed since the previous trusted state, and what must be re-tested or re-evidenced now?**
 
 ## Try it
 
@@ -121,6 +121,10 @@ Historical assurance compares more than raw graph bytes. It identifies node/link
 - conflict, duplicate, invalid and unresolved-reference diagnostics;
 - Reconciliation-as-Code evidence import with stable run/check references and fingerprints;
 - Cutover Graph artifact-index import with task/checkpoint/contingency references;
+- Data Relationship Map import for observed objects, relationships and policy findings;
+- producer observation time propagated into relationship evidence so strict freshness policy remains meaningful;
+- relationship findings represented as external `defect` nodes rather than copied/re-authored relationship rules;
+- explicit project bridges from requirements or changes to producer-owned relationship findings;
 - explicit checkpoint → reconciliation evidence bridge resolution.
 
 ### Review, agent context and retained evidence
@@ -177,7 +181,7 @@ project-evidence-graph import-workitems examples/workitems/alm-export.json \
 
 The built-in Jira profile handles common saved JSON export shapes. Other trackers can be mapped through explicit dot-path profiles.
 
-### Reconciliation and cutover evidence
+### Reconciliation, cutover and relationship evidence
 
 ```bash
 project-evidence-graph import-reconciliation examples/reconciliation/evidence.json \
@@ -185,9 +189,34 @@ project-evidence-graph import-reconciliation examples/reconciliation/evidence.js
 
 project-evidence-graph import-cutover examples/cutover/artifact-index.json \
   --output cutover-evidence.json
+
+project-evidence-graph import-relationship examples/relationship/artifact-index.json \
+  --output relationship-evidence.json
 ```
 
+For Data Relationship Map, `policy_passed: false` is not treated as a broken adapter contract: those findings are the evidence being imported. A malformed producer contract or invalid `eac://` reference fails loud. Missing observation time remains importable but will fail a strict freshness policy such as `missing_timestamp: fail`; a valid producer `observed_at` is preserved on imported evidence.
+
 Domain products remain semantic owners of their artifacts. Project Evidence Graph materializes only the assurance facts and references it needs.
+
+## Explicit bridges, not guessed traceability
+
+Importing independently owned evidence does **not** automatically attach it to a project requirement. The project must state that relationship explicitly.
+
+Example:
+
+```json
+{
+  "from": "REQ-COUNTRY",
+  "to": "eac://dkharlanau/data-relationship-map/finding/cardinality/mapped_to/outgoing/AFS:4711",
+  "type": "challenged_by_relationship_finding",
+  "provenance": {
+    "kind": "explicit_project_bridge",
+    "reason": "Country replication assurance assumes one governed MDG business partner; the observed 1:N identity relationship challenges that assumption"
+  }
+}
+```
+
+This keeps three facts separate: Data Relationship Map owns the observed relationship/finding, the project owns why that finding matters to `REQ-COUNTRY`, and Project Evidence Graph owns the assurance relationship between them.
 
 ## Risk-weighted assurance
 
@@ -231,7 +260,7 @@ A requirement is not operationally assured merely because an old evidence node i
 }
 ```
 
-Freshness is explicit and reproducible: the policy supplies the point in time instead of relying on a hidden system clock.
+Freshness is explicit and reproducible: the policy supplies the point in time instead of relying on a hidden system clock. Producer-owned observed evidence should carry its own explicit observation time for the same reason.
 
 ## Canonical model
 
@@ -263,7 +292,7 @@ Project Evidence Graph owns **project assurance relationships and derived assura
 
 Prefer stable references and reproducible projections over copying the same business fact into several repositories.
 
-Current next step: consume Data Relationship Map object/relationship/finding references as independently owned assurance evidence, then make evidence lifecycle explicit (`supersedes`, `replaces`, stale-by-change).
+Current next step: make evidence lifecycle explicit (`supersedes`, `replaces`, stale-by-change), including resolution semantics for externally owned findings without rewriting producer history.
 
 See [ROADMAP.md](ROADMAP.md) for the current sequence.
 
@@ -276,6 +305,7 @@ See [ROADMAP.md](ROADMAP.md) for the current sequence.
 - freshness-aware and risk-aware evidence assurance;
 - vendor-neutral core with adapters at the boundary;
 - bounded, integrity-verifiable retained evidence;
+- one semantic owner per maintained fact;
 - versionable and portable state;
 - synthetic examples safe to publish.
 
@@ -295,4 +325,4 @@ Portfolio map: https://dkharlanau.github.io/products/
 
 ## Status
 
-**Executable MVP / active development.** Imports, cross-repository composition, traceability/impact, quality/freshness/risk assurance, project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gap is evidence lifecycle and richer consumption of independently owned domain findings—not the core traceability engine.
+**Executable MVP / active development, v0.2.0.** Imports, relationship-finding assurance, cross-repository composition, traceability/impact, quality/freshness/risk assurance, project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gap is evidence lifecycle and stale-by-change semantics—not the core traceability engine.
