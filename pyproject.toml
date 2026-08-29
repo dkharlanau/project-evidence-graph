@@ -31,7 +31,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://dkharlanau.github.io/project-evidence-graph/"
+Homepage = "https://github.com/dkharlanau/project-evidence-graph"
 Repository = "https://github.com/dkharlanau/project-evidence-graph"
 Issues = "https://github.com/dkharlanau/project-evidence-graph/issues"
 Portfolio = "https://dkharlanau.github.io/products/"
