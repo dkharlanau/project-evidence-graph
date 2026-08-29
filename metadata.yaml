@@ -6,13 +6,13 @@ visibility: public
 portfolio:
   layer: assurance
   role: project-evidence-traceability
-  utility_today: 9
+  utility_today: 10
   growth_potential: 10
   sap_proof: 10
   brand_value: 10
 
 status: executable-mvp
-version: 0.1.0
+version: 0.2.0
 
 implementation:
   repository_created: true
@@ -22,6 +22,11 @@ implementation:
   traceability_graph: true
   quality_freshness_risk_gates: true
   cross_repo_composition: true
+  reconciliation_adapter: true
+  cutover_adapter: true
+  relationship_adapter: true
+  relationship_observation_time: true
+  explicit_relationship_finding_bridges: true
   project_review: true
   bounded_context: true
   evidence_packs: true
@@ -36,6 +41,7 @@ principles:
   - provenance-preserving
   - freshness-aware
   - risk-aware
+  - one-semantic-owner
   - versionable
   - portable
   - machine-readable
