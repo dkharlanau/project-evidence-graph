@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from cross_repo import canonical_ref
+from evidence_freshness import parse_iso
 
 EXPECTED_REPOSITORY = "dkharlanau/data-relationship-map"
 EXPECTED_SCHEMA_VERSION = "0.1"
@@ -37,6 +38,41 @@ def _copy_if_present(source: dict[str, Any], target: dict[str, Any], fields: tup
             target[field] = source[field]
 
 
+def _observed_at(index: dict[str, Any], diagnostics: dict[str, Any]) -> str | None:
+    raw = index.get("observed_at")
+    if raw is None or str(raw).strip() == "":
+        diagnostics["source_observed_at"] = None
+        diagnostics["observation_time_status"] = "missing"
+        return None
+    try:
+        parsed = parse_iso(str(raw))
+    except ValueError as exc:
+        diagnostics["source_observed_at"] = str(raw)
+        diagnostics["observation_time_status"] = "invalid"
+        diagnostics["observation_time_error"] = str(exc)
+        return None
+    canonical = parsed.isoformat().replace("+00:00", "Z")
+    diagnostics["source_observed_at"] = canonical
+    diagnostics["observation_time_status"] = "valid"
+    return canonical
+
+
+def _external_node_base(ref: str, *, observed_at: str | None) -> dict[str, Any]:
+    node: dict[str, Any] = {
+        "id": ref,
+        "artifact_ref": ref,
+        "external": True,
+        "external_source": "data-relationship-map",
+        "source": {
+            "repository": EXPECTED_REPOSITORY,
+            "schema_version": EXPECTED_SCHEMA_VERSION,
+        },
+    }
+    if observed_at is not None:
+        node["observed_at"] = observed_at
+    return node
+
+
 def build_graph(index: dict[str, Any]) -> dict[str, Any]:
     diagnostics: dict[str, Any] = {
         "source_index_valid": bool(index.get("valid")),
@@ -52,7 +88,14 @@ def build_graph(index: dict[str, Any]) -> dict[str, Any]:
     if index.get("repository") != EXPECTED_REPOSITORY:
         diagnostics["repository_error"] = f"repository must be {EXPECTED_REPOSITORY}"
 
-    if not diagnostics["source_index_valid"] or diagnostics.get("schema_error") or diagnostics.get("repository_error"):
+    observed_at = _observed_at(index, diagnostics)
+
+    if (
+        not diagnostics["source_index_valid"]
+        or diagnostics.get("schema_error")
+        or diagnostics.get("repository_error")
+        or diagnostics.get("observation_time_status") == "invalid"
+    ):
         diagnostics["valid"] = False
         return {"nodes": [], "links": [], "relationship_import_diagnostics": diagnostics}
 
@@ -85,18 +128,11 @@ def build_graph(index: dict[str, Any]) -> dict[str, Any]:
             "object_type": item.get("object"),
         }
         _copy_if_present(item, metadata, ("provenance", "conflicts", "identity_collisions"))
-        node: dict[str, Any] = {
-            "id": ref,
-            "artifact_ref": ref,
+        node = {
+            **_external_node_base(ref, observed_at=observed_at),
             "type": "evidence",
             "title": item.get("label") or f"Observed relationship object {object_id or ref}",
             "status": "observed",
-            "external": True,
-            "external_source": "data-relationship-map",
-            "source": {
-                "repository": EXPECTED_REPOSITORY,
-                "schema_version": EXPECTED_SCHEMA_VERSION,
-            },
             "metadata": metadata,
         }
         add_node(node, f"objects[{position}]")
@@ -124,14 +160,10 @@ def build_graph(index: dict[str, Any]) -> dict[str, Any]:
         _copy_if_present(relation, metadata, ("provenance",))
         add_node(
             {
-                "id": ref,
-                "artifact_ref": ref,
+                **_external_node_base(ref, observed_at=observed_at),
                 "type": "evidence",
                 "title": f"Observed relationship {source_id} {relation_type} {target_id}",
                 "status": "observed",
-                "external": True,
-                "external_source": "data-relationship-map",
-                "source": {"repository": EXPECTED_REPOSITORY, "schema_version": EXPECTED_SCHEMA_VERSION},
                 "metadata": metadata,
             },
             f"relationships[{position}]",
@@ -159,15 +191,11 @@ def build_graph(index: dict[str, Any]) -> dict[str, Any]:
         metadata = {key: value for key, value in finding.items() if key not in {"artifact_ref", "node_ref"}}
         add_node(
             {
-                "id": ref,
-                "artifact_ref": ref,
+                **_external_node_base(ref, observed_at=observed_at),
                 "type": "defect",
                 "title": f"Data relationship finding: {kind}",
                 "status": "open",
                 "risk": "high" if severity == "error" else "medium",
-                "external": True,
-                "external_source": "data-relationship-map",
-                "source": {"repository": EXPECTED_REPOSITORY, "schema_version": EXPECTED_SCHEMA_VERSION},
                 "metadata": metadata,
             },
             f"findings[{position}]",
