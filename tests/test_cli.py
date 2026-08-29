@@ -14,6 +14,7 @@ class UnifiedCliTests(unittest.TestCase):
         self.assertIn("review", output.getvalue())
         self.assertIn("history", output.getvalue())
         self.assertIn("pack", output.getvalue())
+        self.assertIn("import-relationship", output.getvalue())
 
     def test_analyze_dispatches_to_core(self):
         output = io.StringIO()
@@ -29,6 +30,14 @@ class UnifiedCliTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertIn("REQ-001", output.getvalue())
         self.assertIn("EVID-001", output.getvalue())
+
+    def test_relationship_import_dispatches_to_adapter(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            result = peg_cli.main(["import-relationship", "examples/relationship/artifact-index.json"])
+        self.assertEqual(result, 0)
+        self.assertIn('"external_source": "data-relationship-map"', output.getvalue())
+        self.assertIn('"type": "defect"', output.getvalue())
 
     def test_unknown_command_fails_loudly(self):
         error = io.StringIO()
