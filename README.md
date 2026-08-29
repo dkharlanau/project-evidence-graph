@@ -1,93 +1,199 @@
 # Project Evidence Graph
 
-Connect requirements, decisions, mappings, interfaces, tests, defects, changes, and evidence into one traceable project graph.
+**Evidence-backed project assurance across requirements, decisions, implementation, tests, cutover, defects, changes, and retained proof.**
 
-## Why this exists
+Project Evidence Graph (`project-evidence-graph`) turns fragmented project artifacts into one deterministic traceability model. The graph is not the report: assurance reviews, coverage, impact, bounded context, historical drift and integrity-verifiable evidence packs are generated from the same versioned state.
 
-Project rationale disappears because requirements, mappings, tests, defects, changes, decisions, and evidence live in separate systems. A spreadsheet traceability matrix helps for a moment, but it is usually manual, stale, and hard to query.
+The reference use case is enterprise/SAP transformation, but the core model is vendor-neutral and does not require SAP access.
 
-Project Evidence Graph models traceability as data first. A matrix, quality gate, impact report, evidence pack, or visual explorer becomes a generated view of the graph rather than the source of truth.
+## The question it answers
 
-## Current capabilities
+A project may have requirements in Jira, mappings in spreadsheets, tests in another tool, reconciliation evidence in a release folder and cutover acceptance in a plan. A green traceability matrix can still hide stale evidence or a requirement whose implementation changed after it was tested.
 
-- import ordinary CSV requirements/tests/links through a manifest
-- import saved GitHub Issues/PR JSON exports with stable canonical IDs
-- import saved Jira JSON exports with a built-in profile
-- import ALM/other work-item JSON through profile-driven dot-path mapping
-- preserve source IDs, status, risk, timestamps, URLs, and provenance
-- create tracker/GitHub traceability only from explicit references
-- report unresolved external references instead of inventing links
-- validate artifact nodes and links
-- detect duplicate nodes/links, broken references, and invalid artifact types
-- trace directed paths between artifacts
-- calculate requirement-to-test and requirement-to-evidence coverage
-- calculate requirement coverage by **fresh** evidence, not merely any evidence
-- classify evidence as fresh, stale, future-dated, or missing a trusted timestamp
-- calculate **risk-weighted** test/evidence coverage and uncovered risk score
-- generate traceability-matrix data per requirement
-- run upstream/downstream impact analysis for any artifact
-- enforce machine-readable quality, freshness, and risk-assurance policies in CI
-- browse evidence, relationship, and cutover graphs in a reusable zero-build HTML explorer
+Project Evidence Graph asks:
 
-This repository absorbs the useful core of three previously separate ideas:
+> **Why does this exist, where is it implemented, how was it tested, what evidence supports it, is that evidence still current, what changed since the previous trusted state, and what must be re-tested or re-evidenced now?**
 
-- `traceability-matrix` -> generated from the evidence graph
-- `quality-gate-as-code` -> quality/freshness/risk policy modules
-- `github-pages-explorer` -> `docs/index.html`
+## Try it
 
-## Quick start
+Requires Python 3.10+.
 
 ```bash
-python evidence_graph.py examples/customer-change.json analyze
-python evidence_graph.py examples/customer-change.json path REQ-001 EVID-001
-python evidence_graph.py examples/customer-change.json impact TEST-001
-python quality_gate.py examples/customer-change.json examples/quality-policy.json
-python evidence_freshness.py examples/evidence-freshness.json examples/freshness-policy.json
-python risk_assurance.py examples/risk-assurance.json examples/risk-policy.json
+python -m pip install .
+
+project-evidence-graph analyze examples/customer-change.json
+project-evidence-graph path examples/customer-change.json REQ-001 EVID-001
+project-evidence-graph impact examples/customer-change.json TEST-001
 ```
 
-CSV import:
+The console command is a thin dispatcher over the same deterministic modules used by the test suite. Existing `python evidence_graph.py ...` workflows remain supported.
 
-```bash
-python csv_adapter.py examples/csv/manifest.json --output project-evidence.json
-python evidence_graph.py project-evidence.json analyze
+## The assurance workflow
+
+```text
+project exports + domain evidence
+          ↓
+ explicit/provenance-preserving imports
+          ↓
+       evidence graph
+          ↓
+ validation + traceability + impact
+          ↓
+ quality + freshness + risk policies
+          ↓
+     assurance review
+          ↓
+ bounded context / evidence pack
+          ↓
+ historical assurance comparison
+          ↓
+ retest / evidence-refresh candidates
 ```
 
-GitHub import:
+### 1. Review current assurance
 
 ```bash
-python github_adapter.py examples/github/export.json \
+project-evidence-graph review examples/customer-change.json \
+  --quality-policy examples/quality-policy.json \
+  --markdown build/project-review.md \
+  --html build/project-review.html
+```
+
+The review produces one explicit decision from the supplied deterministic gates and surfaces the assurance gaps behind that decision.
+
+### 2. Build bounded context
+
+```bash
+project-evidence-graph context examples/customer-change.json \
+  --focus REQ-001 \
+  --depth 3 \
+  --output build/context.json
+```
+
+A bounded context keeps the focus artifact, nearby traceability, external references and assurance state together without handing an agent or reviewer the entire project graph.
+
+### 3. Freeze an integrity-verifiable evidence pack
+
+```bash
+project-evidence-graph pack build examples/customer-change.json build/release-pack \
+  --focus REQ-001 \
+  --depth 3
+
+project-evidence-graph pack verify build/release-pack
+```
+
+A pack has deterministic semantic identity, per-file SHA-256 integrity, bounded graph/context and review artifacts. It is intended to be retained with a release, rehearsal or cutover decision rather than rebuilt later from mutable sources.
+
+### 4. Compare assurance over time
+
+```bash
+project-evidence-graph history before.json after.json \
+  --json-output build/assurance-delta.json \
+  --markdown build/assurance-delta.md
+```
+
+Historical assurance compares more than raw graph bytes. It identifies node/link drift, rationale drift, implementation drift, coverage changes, decision changes and requirements that need evidence refresh because their implementation changed.
+
+## What works today
+
+### Traceability and analysis
+
+- canonical project artifact/link model;
+- duplicate, broken-link and invalid-artifact validation;
+- directed path tracing;
+- upstream/downstream impact analysis;
+- requirement-to-test and requirement-to-evidence coverage;
+- traceability-matrix data generated from the graph rather than maintained separately.
+
+### Evidence assurance
+
+- fresh/stale/future/missing-timestamp evidence classification;
+- requirement coverage by **fresh** evidence, not merely reachable evidence;
+- risk-weighted test/evidence coverage and uncovered-risk scoring;
+- machine-readable quality, freshness and risk policies;
+- consolidated JSON/Markdown/HTML project assurance review.
+
+### Cross-repository composition
+
+- stable `eac://` external artifact references;
+- explicit local-to-external and external-to-external traceability;
+- deterministic fragment merge with provenance;
+- conflict, duplicate, invalid and unresolved-reference diagnostics;
+- Reconciliation-as-Code evidence import with stable run/check references and fingerprints;
+- Cutover Graph artifact-index import with task/checkpoint/contingency references;
+- explicit checkpoint → reconciliation evidence bridge resolution.
+
+### Review, agent context and retained evidence
+
+- compact bounded context with deterministic `context_id`;
+- integrity-verifiable evidence packs with deterministic `pack_id`;
+- per-file SHA-256 manifest and independent pack verification;
+- reusable zero-build browser graph explorer;
+- installable `project-evidence-graph` command;
+- CI coverage for both installed CLI and original module workflows.
+
+### Historical assurance
+
+- before/after graph comparison;
+- rationale and implementation drift classification;
+- assurance/coverage decision deltas;
+- changed-implementation detection beneath requirements;
+- deterministic retest/evidence-refresh candidates showing current tests and current evidence.
+
+## Import project evidence without inventing traceability
+
+Adapters keep vendor-specific exports at the boundary. Links are created only from explicit references or explicit bridge contracts; semantic similarity is not treated as evidence that two artifacts are related.
+
+### CSV
+
+```bash
+project-evidence-graph import-csv examples/csv/manifest.json \
+  --output project-evidence.json
+```
+
+A manifest can map requirements, tests and links from ordinary project exports while retaining file/row provenance.
+
+### GitHub
+
+```bash
+project-evidence-graph import-github examples/github/export.json \
   --config examples/github/config.json \
   --output github-evidence.json
 ```
 
-Jira import:
+GitHub Issues/PRs receive stable canonical IDs. Only explicit references create traceability; unresolved references remain diagnostics.
+
+### Jira / generic ALM
 
 ```bash
-python workitem_adapter.py examples/workitems/jira-export.json \
+project-evidence-graph import-workitems examples/workitems/jira-export.json \
   --profile jira \
   --output jira-evidence.json
-```
 
-Generic ALM/work-item import:
-
-```bash
-python workitem_adapter.py examples/workitems/alm-export.json \
+project-evidence-graph import-workitems examples/workitems/alm-export.json \
   --profile examples/workitems/alm-profile.json \
   --output alm-evidence.json
 ```
 
-Run tests:
+The built-in Jira profile handles common saved JSON export shapes. Other trackers can be mapped through explicit dot-path profiles.
+
+### Reconciliation and cutover evidence
 
 ```bash
-python -m unittest discover -s tests -v
+project-evidence-graph import-reconciliation examples/reconciliation/evidence.json \
+  --output reconciliation-evidence.json
+
+project-evidence-graph import-cutover examples/cutover/artifact-index.json \
+  --output cutover-evidence.json
 ```
+
+Domain products remain semantic owners of their artifacts. Project Evidence Graph materializes only the assurance facts and references it needs.
 
 ## Risk-weighted assurance
 
-Raw coverage treats every requirement equally. That is often the wrong business signal: one untested critical requirement can matter more than many low-risk gaps.
+Raw coverage treats every requirement equally. That is often the wrong release signal: one unsupported critical requirement can matter more than many low-risk gaps.
 
-`risk_assurance.py` assigns explicit weights and calculates weighted coverage:
+Example policy:
 
 ```json
 {
@@ -107,47 +213,11 @@ Raw coverage treats every requirement equally. That is often the wrong business 
 }
 ```
 
-The report includes per-requirement risk/weight/coverage state, weighted test/evidence coverage, uncovered risk scores, and unknown-risk diagnostics. The existing unweighted traceability calculation remains unchanged.
-
-## Work-item import profiles
-
-`workitem_adapter.py` keeps vendor-specific JSON at the import boundary. The built-in `jira` profile understands the common `issues[].fields.*` export shape, including explicit Jira issue links.
-
-For another tracker or an exported SAP Cloud ALM-style work-item list, use a profile:
-
-```json
-{
-  "source": "cloud-alm",
-  "project_name": "CUSTOMER-TRANSFORMATION",
-  "items_path": "work_items",
-  "id": "id",
-  "tracker_type": "type",
-  "title": "title",
-  "status": "status",
-  "risk": "risk",
-  "updated_at": "updated_at",
-  "url": "url",
-  "type_map": {
-    "requirement": "requirement",
-    "test": "test",
-    "defect": "defect",
-    "change": "change"
-  },
-  "default_artifact_type": "change",
-  "links": {
-    "path": "links",
-    "target": "target",
-    "type": "relation",
-    "direction": "outward"
-  }
-}
-```
-
-Unknown tracker item types use the explicitly configured default. Unresolved linked IDs remain diagnostics and do not create invented artifacts.
+The raw coverage calculation remains visible. Risk policy adds a decision layer; it does not rewrite or hide the underlying gaps.
 
 ## Evidence freshness
 
-A requirement should not be considered operationally assured merely because some evidence node is reachable. `evidence_freshness.py` evaluates evidence against an explicit point in time and policy.
+A requirement is not operationally assured merely because an old evidence node is reachable.
 
 ```json
 {
@@ -161,58 +231,7 @@ A requirement should not be considered operationally assured merely because some
 }
 ```
 
-The report distinguishes fresh, stale, future-dated, and missing-timestamp evidence and identifies requirements with evidence but no **fresh** evidence.
-
-## GitHub import semantics
-
-GitHub objects receive stable IDs such as:
-
-```text
-GH:acme/customer-platform:ISSUE:12
-GH:acme/customer-platform:PR:31
-```
-
-References are not guessed from semantic similarity: only explicit references in PR text or `linked_issues` create edges.
-
-## Quality policy
-
-```json
-{
-  "require_valid_graph": true,
-  "min_test_coverage": 0.5,
-  "min_evidence_coverage": 0.5,
-  "max_requirements_without_tests": 1,
-  "max_requirements_without_evidence": 1
-}
-```
-
-## CSV import manifest
-
-```json
-{
-  "artifact_sources": [
-    {
-      "file": "requirements.csv",
-      "id": "{REQ_ID}",
-      "type": "requirement",
-      "title": "{TITLE}",
-      "fields": {"risk": "{RISK}"}
-    }
-  ],
-  "link_sources": [
-    {
-      "file": "links.csv",
-      "from": "{FROM_ID}",
-      "to": "{TO_ID}",
-      "type": "{RELATION}"
-    }
-  ]
-}
-```
-
-## Reusable graph explorer
-
-Open `docs/index.html` directly in a browser. No build step or external JavaScript dependency is required. It accepts Project Evidence Graph (`nodes` + `links`), Data Relationship Map (`nodes` + `relationships`), and Cutover Graph (`tasks` + `depends_on`).
+Freshness is explicit and reproducible: the policy supplies the point in time instead of relying on a hidden system clock.
 
 ## Canonical model
 
@@ -232,40 +251,48 @@ Open `docs/index.html` directly in a browser. No build step or external JavaScri
 }
 ```
 
-Supported first-class artifact types are `requirement`, `decision`, `mapping`, `interface`, `test`, `defect`, `change`, and `evidence`.
+First-class artifact types are `requirement`, `decision`, `mapping`, `interface`, `test`, `defect`, `change`, and `evidence`.
 
-## Product direction
+## Reusable explorer
 
-1. Stable `eac://` cross-repository references to Mapping as Code, Interface as Code, Process as Code, Reconciliation as Code, Cutover Graph, and other domain tools.
-2. Generated Markdown/HTML release and audit reports.
-3. Compact machine-readable project context for agents.
-4. Release/cutover evidence packs generated from the graph.
-5. Historical assurance/rationale drift across graph snapshots.
+Open `docs/index.html` directly in a browser. No build step or external JavaScript dependency is required. The explorer accepts Project Evidence Graph (`nodes` + `links`), Data Relationship Map (`nodes` + `relationships`), and Cutover Graph (`tasks` + `depends_on`) shapes for local inspection.
+
+## Ownership boundary
+
+Project Evidence Graph owns **project assurance relationships and derived assurance views**. It does not become a second authoring system for process, mapping, interface, reconciliation, cutover or relationship semantics.
+
+Prefer stable references and reproducible projections over copying the same business fact into several repositories.
+
+Current next step: consume Data Relationship Map object/relationship/finding references as independently owned assurance evidence, then make evidence lifecycle explicit (`supersedes`, `replaces`, stale-by-change).
+
+See [ROADMAP.md](ROADMAP.md) for the current sequence.
 
 ## Design principles
 
-- traceability as graph data, not a manually maintained matrix
-- deterministic coverage and policy logic
-- explicit references over guessed traceability
-- provenance-preserving imports
-- freshness-aware and risk-aware evidence assurance
-- vendor-neutral core with vendor adapters at the boundary
-- versionable and portable state
-- Git-friendly outputs
-- synthetic examples safe to publish
+- traceability as graph data, not a manually maintained matrix;
+- deterministic policy logic;
+- explicit references over guessed traceability;
+- provenance-preserving imports;
+- freshness-aware and risk-aware evidence assurance;
+- vendor-neutral core with adapters at the boundary;
+- bounded, integrity-verifiable retained evidence;
+- versionable and portable state;
+- synthetic examples safe to publish.
 
 ## Related projects
 
 - [Mapping as Code](https://github.com/dkharlanau/mapping-as-code)
-- [Transformation Graph](https://github.com/dkharlanau/transformation-graph)
 - [Interface as Code](https://github.com/dkharlanau/interface-as-code)
-- [Reconciliation as Code](https://github.com/dkharlanau/reconciliation-as-code)
 - [Process as Code](https://github.com/dkharlanau/process-as-code)
+- [Reconciliation as Code](https://github.com/dkharlanau/reconciliation-as-code)
+- [Transformation Graph](https://github.com/dkharlanau/transformation-graph)
 - [Enterprise Change Graph](https://github.com/dkharlanau/enterprise-change-graph)
 - [Decision Tables as Code](https://github.com/dkharlanau/decision-tables-as-code)
 - [Data Relationship Map](https://github.com/dkharlanau/data-relationship-map)
 - [Cutover Graph](https://github.com/dkharlanau/cutover-graph)
 
+Portfolio map: https://dkharlanau.github.io/products/
+
 ## Status
 
-**MVP / active development.** CSV, GitHub, Jira and profile-driven work-item ingestion; provenance; validation; traceability; impact; raw/fresh/risk-weighted coverage; policy gates; reusable graph exploration; examples; tests; and CI are implemented.
+**Executable MVP / active development.** Imports, cross-repository composition, traceability/impact, quality/freshness/risk assurance, project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gap is evidence lifecycle and richer consumption of independently owned domain findings—not the core traceability engine.
