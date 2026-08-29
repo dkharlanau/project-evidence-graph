@@ -36,6 +36,11 @@ jobs:
           project-evidence-graph pack build examples/customer-change.json /tmp/installed-pack \
             --focus REQ-001 --depth 3
           project-evidence-graph pack verify /tmp/installed-pack
+          project-evidence-graph import-relationship examples/relationship/artifact-index.json \
+            --output /tmp/installed-relationship-evidence.json
+          project-evidence-graph analyze /tmp/installed-relationship-evidence.json
+          grep -q '"external_source": "data-relationship-map"' /tmp/installed-relationship-evidence.json
+          grep -q '"type": "defect"' /tmp/installed-relationship-evidence.json
       - name: Backwards-compatible module workflows
         run: |
           python evidence_graph.py examples/customer-change.json analyze
@@ -57,10 +62,12 @@ jobs:
           python evidence_freshness.py /tmp/reconciliation-evidence.json examples/freshness-policy.json
           python cutover_adapter.py examples/cutover/artifact-index.json --output /tmp/cutover-evidence.json
           python evidence_graph.py /tmp/cutover-evidence.json analyze
+          python relationship_adapter.py examples/relationship/artifact-index.json --output /tmp/relationship-evidence.json
+          python evidence_graph.py /tmp/relationship-evidence.json analyze
           python cross_repo.py examples/cross-repo-pack.json --output /tmp/cross-repo-evidence.json
           python evidence_graph.py /tmp/cross-repo-evidence.json analyze
           python evidence_graph.py /tmp/cross-repo-evidence.json path REQ-COUNTRY EVID-COUNTRY
-          python graph_merge.py /tmp/cross-repo-evidence.json /tmp/cutover-evidence.json /tmp/reconciliation-evidence.json --bridges examples/merge/cutover-bridges.json --output /tmp/merged-project.json
+          python graph_merge.py /tmp/cross-repo-evidence.json /tmp/cutover-evidence.json /tmp/reconciliation-evidence.json /tmp/relationship-evidence.json --bridges examples/merge/cutover-bridges.json --output /tmp/merged-project.json
           python evidence_graph.py /tmp/merged-project.json analyze
           python evidence_graph.py /tmp/merged-project.json path REQ-COUNTRY eac://dkharlanau/reconciliation-as-code/reconciliation/customer-country-post-load/run/production-load-01
           python project_review.py /tmp/merged-project.json --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --markdown /tmp/project-review.md --html /tmp/project-review.html
