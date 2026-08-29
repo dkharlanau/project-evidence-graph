@@ -20,36 +20,53 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m unittest discover -s tests -v
-      - run: python evidence_graph.py examples/customer-change.json analyze
-      - run: python evidence_graph.py examples/customer-change.json path REQ-001 EVID-001
-      - run: python evidence_graph.py examples/customer-change.json impact TEST-001
-      - run: python quality_gate.py examples/customer-change.json examples/quality-policy.json
-      - run: python evidence_freshness.py examples/evidence-freshness.json examples/freshness-policy.json
-      - run: python risk_assurance.py examples/risk-assurance.json examples/risk-policy.json
-      - run: python csv_adapter.py examples/csv/manifest.json --output /tmp/project-evidence.json
-      - run: python evidence_graph.py /tmp/project-evidence.json analyze
-      - run: python github_adapter.py examples/github/export.json --config examples/github/config.json --output /tmp/github-evidence.json
-      - run: python evidence_graph.py /tmp/github-evidence.json analyze
-      - run: python workitem_adapter.py examples/workitems/jira-export.json --profile jira --output /tmp/jira-evidence.json
-      - run: python evidence_graph.py /tmp/jira-evidence.json analyze
-      - run: python workitem_adapter.py examples/workitems/alm-export.json --profile examples/workitems/alm-profile.json --output /tmp/alm-evidence.json
-      - run: python evidence_graph.py /tmp/alm-evidence.json analyze
-      - run: python reconciliation_adapter.py examples/reconciliation/evidence.json --output /tmp/reconciliation-evidence.json
-      - run: python evidence_graph.py /tmp/reconciliation-evidence.json analyze
-      - run: python evidence_freshness.py /tmp/reconciliation-evidence.json examples/freshness-policy.json
-      - run: python cutover_adapter.py examples/cutover/artifact-index.json --output /tmp/cutover-evidence.json
-      - run: python evidence_graph.py /tmp/cutover-evidence.json analyze
-      - run: python cross_repo.py examples/cross-repo-pack.json --output /tmp/cross-repo-evidence.json
-      - run: python evidence_graph.py /tmp/cross-repo-evidence.json analyze
-      - run: python evidence_graph.py /tmp/cross-repo-evidence.json path REQ-COUNTRY EVID-COUNTRY
-      - run: python graph_merge.py /tmp/cross-repo-evidence.json /tmp/cutover-evidence.json /tmp/reconciliation-evidence.json --bridges examples/merge/cutover-bridges.json --output /tmp/merged-project.json
-      - run: python evidence_graph.py /tmp/merged-project.json analyze
-      - run: python evidence_graph.py /tmp/merged-project.json path REQ-COUNTRY eac://dkharlanau/reconciliation-as-code/reconciliation/customer-country-post-load/run/production-load-01
-      - run: python project_review.py /tmp/merged-project.json --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --markdown /tmp/project-review.md --html /tmp/project-review.html
-      - run: test -s /tmp/project-review.md && test -s /tmp/project-review.html
-      - run: python project_context.py /tmp/merged-project.json --focus REQ-COUNTRY --depth 7 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --output /tmp/project-context.json
-      - run: test -s /tmp/project-context.json
-      - run: python evidence_pack.py build /tmp/merged-project.json /tmp/release-evidence-pack --focus REQ-COUNTRY --depth 7 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json
-      - run: python evidence_pack.py verify /tmp/release-evidence-pack
-      - run: test -s /tmp/release-evidence-pack/manifest.json && test -s /tmp/release-evidence-pack/graph.json && test -s /tmp/release-evidence-pack/context.json && test -s /tmp/release-evidence-pack/review.md && test -s /tmp/release-evidence-pack/review.html
+      - name: Install package
+        run: python -m pip install .
+      - name: Test suite
+        run: python -m unittest discover -s tests -v
+      - name: Installed CLI smoke tests
+        run: |
+          project-evidence-graph --help
+          project-evidence-graph analyze examples/customer-change.json
+          project-evidence-graph path examples/customer-change.json REQ-001 EVID-001
+          project-evidence-graph impact examples/customer-change.json TEST-001
+          project-evidence-graph context examples/customer-change.json \
+            --focus REQ-001 --depth 3 --output /tmp/installed-context.json
+          test -s /tmp/installed-context.json
+          project-evidence-graph pack build examples/customer-change.json /tmp/installed-pack \
+            --focus REQ-001 --depth 3
+          project-evidence-graph pack verify /tmp/installed-pack
+      - name: Backwards-compatible module workflows
+        run: |
+          python evidence_graph.py examples/customer-change.json analyze
+          python evidence_graph.py examples/customer-change.json path REQ-001 EVID-001
+          python evidence_graph.py examples/customer-change.json impact TEST-001
+          python quality_gate.py examples/customer-change.json examples/quality-policy.json
+          python evidence_freshness.py examples/evidence-freshness.json examples/freshness-policy.json
+          python risk_assurance.py examples/risk-assurance.json examples/risk-policy.json
+          python csv_adapter.py examples/csv/manifest.json --output /tmp/project-evidence.json
+          python evidence_graph.py /tmp/project-evidence.json analyze
+          python github_adapter.py examples/github/export.json --config examples/github/config.json --output /tmp/github-evidence.json
+          python evidence_graph.py /tmp/github-evidence.json analyze
+          python workitem_adapter.py examples/workitems/jira-export.json --profile jira --output /tmp/jira-evidence.json
+          python evidence_graph.py /tmp/jira-evidence.json analyze
+          python workitem_adapter.py examples/workitems/alm-export.json --profile examples/workitems/alm-profile.json --output /tmp/alm-evidence.json
+          python evidence_graph.py /tmp/alm-evidence.json analyze
+          python reconciliation_adapter.py examples/reconciliation/evidence.json --output /tmp/reconciliation-evidence.json
+          python evidence_graph.py /tmp/reconciliation-evidence.json analyze
+          python evidence_freshness.py /tmp/reconciliation-evidence.json examples/freshness-policy.json
+          python cutover_adapter.py examples/cutover/artifact-index.json --output /tmp/cutover-evidence.json
+          python evidence_graph.py /tmp/cutover-evidence.json analyze
+          python cross_repo.py examples/cross-repo-pack.json --output /tmp/cross-repo-evidence.json
+          python evidence_graph.py /tmp/cross-repo-evidence.json analyze
+          python evidence_graph.py /tmp/cross-repo-evidence.json path REQ-COUNTRY EVID-COUNTRY
+          python graph_merge.py /tmp/cross-repo-evidence.json /tmp/cutover-evidence.json /tmp/reconciliation-evidence.json --bridges examples/merge/cutover-bridges.json --output /tmp/merged-project.json
+          python evidence_graph.py /tmp/merged-project.json analyze
+          python evidence_graph.py /tmp/merged-project.json path REQ-COUNTRY eac://dkharlanau/reconciliation-as-code/reconciliation/customer-country-post-load/run/production-load-01
+          python project_review.py /tmp/merged-project.json --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --markdown /tmp/project-review.md --html /tmp/project-review.html
+          test -s /tmp/project-review.md && test -s /tmp/project-review.html
+          python project_context.py /tmp/merged-project.json --focus REQ-COUNTRY --depth 7 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --output /tmp/project-context.json
+          test -s /tmp/project-context.json
+          python evidence_pack.py build /tmp/merged-project.json /tmp/release-evidence-pack --focus REQ-COUNTRY --depth 7 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json
+          python evidence_pack.py verify /tmp/release-evidence-pack
+          test -s /tmp/release-evidence-pack/manifest.json && test -s /tmp/release-evidence-pack/graph.json && test -s /tmp/release-evidence-pack/context.json && test -s /tmp/release-evidence-pack/review.md && test -s /tmp/release-evidence-pack/review.html
