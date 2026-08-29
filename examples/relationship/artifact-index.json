@@ -1,0 +1,79 @@
+{
+  "schema_version": "0.1",
+  "repository": "dkharlanau/data-relationship-map",
+  "valid": true,
+  "validation": {
+    "valid": true,
+    "node_count": 3,
+    "relationship_count": 2,
+    "duplicate_nodes": [],
+    "duplicate_relationships": [],
+    "broken_relationships": [],
+    "orphans": []
+  },
+  "policy_evaluated": true,
+  "policy_passed": false,
+  "objects": [
+    {
+      "id": "AFS:4711",
+      "artifact_ref": "eac://dkharlanau/data-relationship-map/object/AFS:4711",
+      "system": "AFS",
+      "object": "customer",
+      "provenance": [
+        {"file": "customer-crosswalk.xlsx", "sheet": "Crosswalk", "row": 2}
+      ]
+    },
+    {
+      "id": "MDG:7200311",
+      "artifact_ref": "eac://dkharlanau/data-relationship-map/object/MDG:7200311",
+      "system": "MDG",
+      "object": "business-partner",
+      "provenance": [
+        {"file": "customer-crosswalk.xlsx", "sheet": "Crosswalk", "row": 2}
+      ]
+    },
+    {
+      "id": "MDG:7200312",
+      "artifact_ref": "eac://dkharlanau/data-relationship-map/object/MDG:7200312",
+      "system": "MDG",
+      "object": "business-partner",
+      "provenance": [
+        {"file": "customer-crosswalk.xlsx", "sheet": "Crosswalk", "row": 3}
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "artifact_ref": "eac://dkharlanau/data-relationship-map/relationship/AFS:4711/mapped_to/MDG:7200311",
+      "from": "AFS:4711",
+      "to": "MDG:7200311",
+      "from_ref": "eac://dkharlanau/data-relationship-map/object/AFS:4711",
+      "to_ref": "eac://dkharlanau/data-relationship-map/object/MDG:7200311",
+      "type": "mapped_to",
+      "provenance": {"file": "customer-crosswalk.xlsx", "sheet": "Crosswalk", "row": 2}
+    },
+    {
+      "artifact_ref": "eac://dkharlanau/data-relationship-map/relationship/AFS:4711/mapped_to/MDG:7200312",
+      "from": "AFS:4711",
+      "to": "MDG:7200312",
+      "from_ref": "eac://dkharlanau/data-relationship-map/object/AFS:4711",
+      "to_ref": "eac://dkharlanau/data-relationship-map/object/MDG:7200312",
+      "type": "mapped_to",
+      "provenance": {"file": "customer-crosswalk.xlsx", "sheet": "Crosswalk", "row": 3}
+    }
+  ],
+  "findings": [
+    {
+      "artifact_ref": "eac://dkharlanau/data-relationship-map/finding/cardinality/mapped_to/outgoing/AFS:4711",
+      "kind": "cardinality",
+      "severity": "error",
+      "node": "AFS:4711",
+      "node_ref": "eac://dkharlanau/data-relationship-map/object/AFS:4711",
+      "relationship_type": "mapped_to",
+      "direction": "outgoing",
+      "actual": 2,
+      "allowed": 1,
+      "related": ["MDG:7200311", "MDG:7200312"]
+    }
+  ]
+}
