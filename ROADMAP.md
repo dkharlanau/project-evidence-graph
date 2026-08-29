@@ -1,55 +1,52 @@
 # Roadmap
 
-## Done — usable MVP
+## Done — project assurance MVP
 
 - canonical project artifact/link model
 - validation for duplicates, broken links, and artifact types
-- directed path tracing
-- upstream/downstream impact analysis
+- directed path tracing and upstream/downstream impact analysis
 - requirement-to-test and requirement-to-evidence coverage
-- fresh-evidence requirement coverage
-- stale/future/missing-timestamp evidence diagnostics
-- policy-based evidence freshness gates
-- risk-weighted test/evidence coverage and uncovered risk scoring
-- policy-based risk-assurance gates
+- fresh-evidence requirement coverage and stale/future/missing-timestamp diagnostics
+- policy-based quality, freshness and risk-assurance gates
+- risk-weighted test/evidence coverage and uncovered-risk scoring
 - generated traceability-matrix data
-- policy-based quality gates for CI
-- generic CSV import with file/row provenance
-- GitHub Issues/PR JSON import with explicit-reference traceability and unresolved-reference diagnostics
-- built-in Jira work-item import profile
-- profile-driven ALM/other tracker import with explicit links only
-- Reconciliation-as-Code evidence v1 import with pass->evidence / fail->defect semantics
-- stable reconciliation run/check `eac://` references and preserved fingerprints
-- Cutover Graph artifact-index import with stable task/checkpoint/contingency refs
-- passed checkpoint -> evidence / incomplete checkpoint -> defect semantics
-- automatic checkpoint -> Reconciliation-as-Code bridge resolution through explicit `eac://` evidence refs
-- stable `eac://` cross-repository artifact materialization
-- explicit local<->external and external<->external traceability links
-- deterministic graph-fragment merge with explicit and fragment-emitted bridge links
-- cross-repository invalid/duplicate/conflict/unresolved diagnostics
+- CSV, GitHub, Jira and profile-driven ALM/work-item imports with provenance
+- explicit-reference-only tracker traceability and unresolved-reference diagnostics
+- Reconciliation-as-Code evidence import with stable run/check `eac://` references and retained fingerprints
+- Cutover Graph artifact-index import with stable task/checkpoint/contingency references
+- explicit checkpoint -> reconciliation evidence bridge resolution
+- stable cross-repository artifact materialization and deterministic graph-fragment merge
 - consolidated Markdown/HTML project assurance review
-- one explicit review decision across supplied quality/freshness/risk policy gates
-- compact bounded project context for agents
-- deterministic `context_id` for reproducible context slices
-- integrity-verifiable bounded release/cutover evidence packs
-- deterministic `pack_id`, per-file SHA-256 manifest, and pack verification
-- reusable zero-build browser graph explorer
-- realistic traceability/freshness/risk/external-work-item/reconciliation/cutover/cross-repository examples
-- unit tests and GitHub Actions CI
+- one explicit review decision across supplied quality/freshness/risk policies
+- compact bounded project context with deterministic `context_id`
+- integrity-verifiable evidence packs with deterministic `pack_id` and per-file SHA-256 manifest
+- reusable zero-build graph explorer
+- installable Python package and unified `project-evidence-graph` command
+- unit tests, installed-CLI smoke tests and GitHub Actions CI
 
-## Now — historical assurance and broader domain emitters
+## Done — historical assurance
 
-1. Compare project graph snapshots and explain traceability/rationale drift.
-2. Compare assurance/evidence-pack decisions between rehearsal, release, and production states.
-3. Detect changed requirement -> changed implementation -> required retest/evidence refresh.
-4. Consume stable `eac://` refs from Data Relationship Map and additional domain repositories.
+- compare project graph snapshots and explain node/link traceability drift
+- classify rationale and implementation drift
+- compare assurance decisions and coverage between states
+- detect changed implementation beneath a requirement
+- derive deterministic retest/evidence-refresh candidates with current tests and evidence
+- render historical assurance comparison as JSON or Markdown
 
-## Next — evidence lifecycle
+## Now — evidence lifecycle and relationship evidence
 
-- explicit supersedes/replaces relationships for evidence and decisions
-- stale-by-change detection: evidence becomes suspect when implementation changed after observation
-- release-to-release assurance trend
-- bounded evidence-pack comparison reports
+1. Consume stable Data Relationship Map `eac://` object, relationship and finding references as independently owned evidence.
+2. Add explicit `supersedes` / `replaces` lifecycle semantics for evidence and decisions.
+3. Detect **stale-by-change** evidence: implementation changed after the observation the evidence is meant to support.
+4. Compare bounded evidence packs between rehearsal, release and production rather than comparing only whole graphs.
+
+## Next — assurance trends and review workflow
+
+- release-to-release assurance trend with explicit metric definitions
+- resolved/open lifecycle for assurance gaps
+- review annotations that preserve who accepted a gap, why, and for which exact graph/policy fingerprint
+- generated release/audit summary from current review + historical delta + retained evidence pack
+- project-level consumption contract for Enterprise Change Graph and Cutover Graph
 
 ## Later — operational assurance
 
@@ -62,4 +59,4 @@
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, which cutover checkpoint accepted it, is the evidence current enough to trust now, are the remaining assurance gaps acceptable for the requirement's business risk, can that state be reviewed and integrity-checked in one bounded release pack, and how did that assurance state change from rehearsal to production?
+> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, which cutover checkpoint accepted it, is the evidence current enough to trust now, what changed since the previous trusted state, which implementation change requires retest or evidence refresh, are the remaining assurance gaps acceptable for the requirement's business risk, and can that state be reviewed and integrity-checked in one bounded release pack?
