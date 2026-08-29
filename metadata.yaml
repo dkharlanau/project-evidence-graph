@@ -4,26 +4,41 @@ owner: dkharlanau
 visibility: public
 
 portfolio:
-  rank: 10
-  utility_today: 8
+  layer: assurance
+  role: project-evidence-traceability
+  utility_today: 9
   growth_potential: 10
   sap_proof: 10
   brand_value: 10
 
-status: planning
+status: executable-mvp
+version: 0.1.0
 
 implementation:
   repository_created: true
-  implementation_status: not-started
-  codex_fit: 5/5
+  implementation_status: executable
+  installable_package: true
+  console_command: project-evidence-graph
+  traceability_graph: true
+  quality_freshness_risk_gates: true
+  cross_repo_composition: true
+  project_review: true
+  bounded_context: true
+  evidence_packs: true
+  historical_assurance: true
+  test_suite: true
+  ci: true
   sap_access_required: false
 
 principles:
+  - deterministic-first
+  - explicit-references
+  - provenance-preserving
+  - freshness-aware
+  - risk-aware
   - versionable
   - portable
   - machine-readable
-  - deterministic-first
-  - visual
   - git-friendly
   - interoperable
 
@@ -33,4 +48,5 @@ primary_users:
   - data consultants
   - integration consultants
   - business analysts
+  - test and assurance leads
   - transformation teams
