@@ -14,6 +14,10 @@
 - explicit-reference-only tracker traceability and unresolved-reference diagnostics
 - Reconciliation-as-Code evidence import with stable run/check `eac://` references and retained fingerprints
 - Cutover Graph artifact-index import with stable task/checkpoint/contingency references
+- Data Relationship Map import for producer-owned objects, relationships and findings
+- explicit observation-time propagation from Data Relationship Map into freshness-aware project evidence
+- relationship-policy findings materialized as project `defect` artifacts without copying relationship semantic ownership
+- explicit project bridges from requirements/changes to relationship findings; no semantic-similarity linking
 - explicit checkpoint -> reconciliation evidence bridge resolution
 - stable cross-repository artifact materialization and deterministic graph-fragment merge
 - consolidated Markdown/HTML project assurance review
@@ -33,12 +37,12 @@
 - derive deterministic retest/evidence-refresh candidates with current tests and evidence
 - render historical assurance comparison as JSON or Markdown
 
-## Now — evidence lifecycle and relationship evidence
+## Now — evidence lifecycle
 
-1. Consume stable Data Relationship Map `eac://` object, relationship and finding references as independently owned evidence.
-2. Add explicit `supersedes` / `replaces` lifecycle semantics for evidence and decisions.
-3. Detect **stale-by-change** evidence: implementation changed after the observation the evidence is meant to support.
-4. Compare bounded evidence packs between rehearsal, release and production rather than comparing only whole graphs.
+1. Add explicit `supersedes` / `replaces` lifecycle semantics for evidence and decisions.
+2. Detect **stale-by-change** evidence: implementation changed after the observation the evidence is meant to support.
+3. Compare bounded evidence packs between rehearsal, release and production rather than comparing only whole graphs.
+4. Define resolution semantics for externally owned findings without rewriting producer history.
 
 ## Next — assurance trends and review workflow
 
@@ -59,4 +63,4 @@
 
 For any important requirement or production change, the graph should answer:
 
-> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, which cutover checkpoint accepted it, is the evidence current enough to trust now, what changed since the previous trusted state, which implementation change requires retest or evidence refresh, are the remaining assurance gaps acceptable for the requirement's business risk, and can that state be reviewed and integrity-checked in one bounded release pack?
+> Why does this exist, what is upstream/downstream of it, where is it implemented across repositories, how was it tested and reconciled, which cutover checkpoint accepted it, what observed relationship evidence challenges it, is the evidence current enough to trust now, what changed since the previous trusted state, which implementation change requires retest or evidence refresh, are the remaining assurance gaps acceptable for the requirement's business risk, and can that state be reviewed and integrity-checked in one bounded release pack?
