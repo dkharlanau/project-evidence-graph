@@ -1,0 +1,22 @@
+{
+  "links": [
+    {
+      "from": "TEST-COUNTRY",
+      "to": "eac://dkharlanau/cutover-graph/task/reconcile-customers",
+      "type": "executed_in_cutover",
+      "provenance": {
+        "kind": "explicit_project_bridge",
+        "reason": "The integration test is executed and accepted through the production cutover reconciliation task"
+      }
+    },
+    {
+      "from": "REQ-COUNTRY",
+      "to": "eac://dkharlanau/data-relationship-map/finding/cardinality/mapped_to/outgoing/AFS:4711",
+      "type": "challenged_by_relationship_finding",
+      "provenance": {
+        "kind": "explicit_project_bridge",
+        "reason": "Country replication assurance assumes the source customer resolves to one governed MDG business partner; the observed 1:N identity relationship challenges that assumption"
+      }
+    }
+  ]
+}
