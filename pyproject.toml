@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "project-evidence-graph"
+version = "0.1.0"
+description = "Evidence-backed project traceability, assurance review, historical drift and portable evidence packs."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Dzmitryi Kharlanau" }]
+keywords = [
+  "traceability",
+  "evidence",
+  "assurance",
+  "requirements",
+  "testing",
+  "audit",
+  "migration",
+  "enterprise",
+  "sap",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://dkharlanau.github.io/project-evidence-graph/"
+Repository = "https://github.com/dkharlanau/project-evidence-graph"
+Issues = "https://github.com/dkharlanau/project-evidence-graph/issues"
+Portfolio = "https://dkharlanau.github.io/products/"
+
+[project.scripts]
+project-evidence-graph = "peg_cli:main"
+
+[tool.setuptools]
+py-modules = [
+  "assurance_diff",
+  "cross_repo",
+  "csv_adapter",
+  "cutover_adapter",
+  "evidence_freshness",
+  "evidence_graph",
+  "evidence_pack",
+  "github_adapter",
+  "graph_merge",
+  "peg_cli",
+  "project_context",
+  "project_review",
+  "quality_gate",
+  "reconciliation_adapter",
+  "risk_assurance",
+  "workitem_adapter",
+]
