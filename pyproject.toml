@@ -46,6 +46,7 @@ py-modules = [
   "csv_adapter",
   "cutover_adapter",
   "evidence_freshness",
+  "evidence_lifecycle",
   "evidence_graph",
   "evidence_pack",
   "github_adapter",
