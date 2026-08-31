@@ -62,6 +62,12 @@ class ProjectContextTests(unittest.TestCase):
         self.assertIsNotNone(context["assurance"])
         self.assertTrue(context["assurance"]["quality_policy"]["passed"])
 
+    def test_lifecycle_assurance_can_be_embedded_without_policy_file(self):
+        context = build_context(self.graph, focus="TEST-1", depth=1, lifecycle_enabled=True)
+        self.assertIsNotNone(context["assurance"])
+        self.assertTrue(context["assurance"]["lifecycle_policy"]["passed"])
+        self.assertEqual(context["assurance"]["lifecycle_policy"]["active_evidence"], ["EVID-1"])
+
     def test_unknown_focus(self):
         context = build_context(self.graph, focus="MISSING", depth=2)
         self.assertFalse(context["found"])

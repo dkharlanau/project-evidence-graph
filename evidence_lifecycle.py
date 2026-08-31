@@ -19,6 +19,11 @@ DEFAULT_IMPLEMENTATION_TIMESTAMP_FIELDS = ("changed_at",)
 DEFAULT_EVIDENCE_TIMESTAMP_FIELDS = ("observed_at", "updated_at", "created_at")
 
 
+def load_policy(path: str | Path) -> dict[str, Any]:
+    """Load a lifecycle policy from JSON."""
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
 def parse_iso(value: str) -> datetime:
     normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
     parsed = datetime.fromisoformat(normalized)
@@ -366,7 +371,7 @@ def main() -> int:
     args = parser.parse_args()
 
     graph = json.loads(Path(args.graph).read_text(encoding="utf-8"))
-    policy = json.loads(Path(args.policy).read_text(encoding="utf-8")) if args.policy else None
+    policy = load_policy(args.policy) if args.policy else None
     result = evaluate(graph, policy)
     payload = json.dumps(result, indent=2, ensure_ascii=False)
     if args.json_output:

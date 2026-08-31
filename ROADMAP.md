@@ -44,12 +44,14 @@
 - inactive historical evidence retained without contributing to current assurance
 - **stale-by-change** detection when implementation changed after the observation the active evidence is meant to support
 - installed CLI, JSON/Markdown output, reference examples, tests and CI coverage
+- lifecycle and stale-by-change state integrated into consolidated JSON/Markdown/HTML assurance reviews
+- optional lifecycle assurance embedded in bounded agent context
+- lifecycle-aware retained evidence packs with effective-policy fingerprinting
 
 ## Now — retained assurance comparison and resolution
 
 1. Compare bounded evidence packs between rehearsal, release and production rather than comparing only whole graphs.
-2. Integrate lifecycle state and stale-by-change findings into the consolidated assurance review and retained packs.
-3. Define resolution semantics for externally owned findings without rewriting producer history.
+2. Define resolution semantics for externally owned findings without rewriting producer history.
 
 ## Next — assurance trends and review workflow
 

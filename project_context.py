@@ -12,6 +12,7 @@ from typing import Any
 
 from evidence_freshness import load_policy as load_freshness_policy
 from evidence_graph import _index, load_graph
+from evidence_lifecycle import load_policy as load_lifecycle_policy
 from project_review import build_summary
 from quality_gate import load_policy as load_quality_policy
 from risk_assurance import load_policy as load_risk_policy
@@ -83,6 +84,8 @@ def build_context(
     quality_policy: dict[str, Any] | None = None,
     freshness_policy: dict[str, Any] | None = None,
     risk_policy: dict[str, Any] | None = None,
+    lifecycle_enabled: bool = False,
+    lifecycle_policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     nodes, _ = _index(graph)
     selected = bounded_ids(graph, focus, depth)
@@ -115,8 +118,15 @@ def build_context(
     )
 
     assurance = None
-    if any(policy is not None for policy in (quality_policy, freshness_policy, risk_policy)):
-        assurance = build_summary(graph, quality_policy, freshness_policy, risk_policy)
+    if any(policy is not None for policy in (quality_policy, freshness_policy, risk_policy, lifecycle_policy)) or lifecycle_enabled:
+        assurance = build_summary(
+            graph,
+            quality_policy,
+            freshness_policy,
+            risk_policy,
+            lifecycle_enabled,
+            lifecycle_policy,
+        )
 
     context_id = _context_id(focus, depth, compact_nodes, compact_links)
     return {
@@ -145,6 +155,8 @@ def main() -> int:
     parser.add_argument("--quality-policy")
     parser.add_argument("--freshness-policy")
     parser.add_argument("--risk-policy")
+    parser.add_argument("--lifecycle", action="store_true", help="embed lifecycle and stale-by-change assurance with default policy")
+    parser.add_argument("--lifecycle-policy", help="embed lifecycle assurance with a JSON policy")
     parser.add_argument("--output", "-o")
     args = parser.parse_args()
 
@@ -156,6 +168,8 @@ def main() -> int:
         load_quality_policy(args.quality_policy) if args.quality_policy else None,
         load_freshness_policy(args.freshness_policy) if args.freshness_policy else None,
         load_risk_policy(args.risk_policy) if args.risk_policy else None,
+        args.lifecycle or bool(args.lifecycle_policy),
+        load_lifecycle_policy(args.lifecycle_policy) if args.lifecycle_policy else None,
     )
     payload = json.dumps(context, indent=2)
     if args.output:

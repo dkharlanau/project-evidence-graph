@@ -50,6 +50,27 @@ class ProjectReviewTests(unittest.TestCase):
         self.assertIsNone(result["quality_policy"])
         self.assertIsNone(result["freshness_policy"])
         self.assertIsNone(result["risk_policy"])
+        self.assertIsNone(result["lifecycle_policy"])
+
+    def test_lifecycle_gate_fails_when_active_evidence_predates_change(self):
+        graph = {
+            "nodes": [
+                {"id": "REQ-1", "type": "requirement"},
+                {"id": "MAP-1", "type": "mapping", "changed_at": "2026-08-21T10:00:00Z"},
+                {"id": "TEST-1", "type": "test"},
+                {"id": "EVID-1", "type": "evidence", "observed_at": "2026-08-20T10:00:00Z"},
+            ],
+            "links": [
+                {"from": "REQ-1", "to": "MAP-1", "type": "implemented_by"},
+                {"from": "MAP-1", "to": "TEST-1", "type": "verified_by"},
+                {"from": "TEST-1", "to": "EVID-1", "type": "produced"},
+            ],
+        }
+        result = build_summary(graph, lifecycle_enabled=True)
+        self.assertFalse(result["passed"])
+        self.assertEqual(result["decision"], "FAIL")
+        self.assertIn("active_evidence_stale_by_change", result["lifecycle_policy"]["failed_checks"])
+        self.assertIn("Active evidence stale by change", render_markdown(result))
 
     def test_markdown_contains_distinct_coverage_signals(self):
         summary = build_summary(self.graph, self.quality, self.freshness, self.risk)

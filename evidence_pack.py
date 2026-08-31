@@ -11,6 +11,7 @@ from typing import Any
 
 from evidence_freshness import load_policy as load_freshness_policy
 from evidence_graph import _index, load_graph
+from evidence_lifecycle import load_policy as load_lifecycle_policy
 from project_context import bounded_ids, build_context
 from project_review import build_summary, render_html, render_markdown
 from quality_gate import load_policy as load_quality_policy
@@ -59,11 +60,14 @@ def _policy_fingerprints(
     quality_policy: dict[str, Any] | None,
     freshness_policy: dict[str, Any] | None,
     risk_policy: dict[str, Any] | None,
+    lifecycle_enabled: bool = False,
+    lifecycle_policy: dict[str, Any] | None = None,
 ) -> dict[str, str | None]:
     return {
         "quality": _semantic_sha(quality_policy) if quality_policy is not None else None,
         "freshness": _semantic_sha(freshness_policy) if freshness_policy is not None else None,
         "risk": _semantic_sha(risk_policy) if risk_policy is not None else None,
+        "lifecycle": _semantic_sha(lifecycle_policy or {}) if lifecycle_enabled or lifecycle_policy is not None else None,
     }
 
 
@@ -87,6 +91,8 @@ def build_pack(
     freshness_policy: dict[str, Any] | None = None,
     risk_policy: dict[str, Any] | None = None,
     source_graph_sha256: str | None = None,
+    lifecycle_enabled: bool = False,
+    lifecycle_policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if depth < 0:
         raise ValueError("depth must be >= 0")
@@ -94,9 +100,31 @@ def build_pack(
     output.mkdir(parents=True, exist_ok=True)
 
     bounded = slice_graph(graph, focus, depth)
-    summary = build_summary(bounded, quality_policy, freshness_policy, risk_policy)
-    context = build_context(bounded, focus, depth, quality_policy, freshness_policy, risk_policy)
-    policy_fingerprints = _policy_fingerprints(quality_policy, freshness_policy, risk_policy)
+    summary = build_summary(
+        bounded,
+        quality_policy,
+        freshness_policy,
+        risk_policy,
+        lifecycle_enabled,
+        lifecycle_policy,
+    )
+    context = build_context(
+        bounded,
+        focus,
+        depth,
+        quality_policy,
+        freshness_policy,
+        risk_policy,
+        lifecycle_enabled,
+        lifecycle_policy,
+    )
+    policy_fingerprints = _policy_fingerprints(
+        quality_policy,
+        freshness_policy,
+        risk_policy,
+        lifecycle_enabled,
+        summary["lifecycle_policy"]["policy"] if summary["lifecycle_policy"] is not None else None,
+    )
     pack_id = _pack_id(bounded, focus, depth, policy_fingerprints)
 
     graph_path = output / "graph.json"
@@ -193,6 +221,8 @@ def main() -> int:
     build.add_argument("--quality-policy")
     build.add_argument("--freshness-policy")
     build.add_argument("--risk-policy")
+    build.add_argument("--lifecycle", action="store_true", help="retain lifecycle and stale-by-change assurance using the default policy")
+    build.add_argument("--lifecycle-policy", help="retain lifecycle assurance using a JSON policy")
 
     verify = sub.add_parser("verify")
     verify.add_argument("pack_dir")
@@ -213,6 +243,8 @@ def main() -> int:
         load_freshness_policy(args.freshness_policy) if args.freshness_policy else None,
         load_risk_policy(args.risk_policy) if args.risk_policy else None,
         _source_sha(args.graph),
+        args.lifecycle or bool(args.lifecycle_policy),
+        load_lifecycle_policy(args.lifecycle_policy) if args.lifecycle_policy else None,
     )
     print(json.dumps(manifest, indent=2))
     return 0

@@ -10,7 +10,8 @@ python evidence_pack.py build merged-project.json release-evidence/ \
   --depth 5 \
   --quality-policy examples/quality-policy.json \
   --freshness-policy examples/freshness-policy.json \
-  --risk-policy examples/risk-policy.json
+  --risk-policy examples/risk-policy.json \
+  --lifecycle
 ```
 
 The directory contains:
@@ -36,7 +37,7 @@ Compact reproducible agent/tool context with deterministic `context_id`.
 
 ### `review.md` / `review.html`
 
-Human review surfaces generated from the bounded graph itself. Raw coverage, freshness, and risk-weighted assurance remain distinct signals.
+Human review surfaces generated from the bounded graph itself. Raw coverage, freshness, risk-weighted assurance, and optional lifecycle/stale-by-change results remain distinct signals.
 
 ### `manifest.json`
 
@@ -47,7 +48,7 @@ Records:
 - focus/depth scope;
 - PASS/FAIL review decision;
 - optional source graph file SHA-256;
-- semantic SHA-256 fingerprints of supplied policy documents;
+- semantic SHA-256 fingerprints of supplied policy documents and the effective lifecycle policy when lifecycle assurance is enabled;
 - bounded node/link counts and context ID;
 - SHA-256 and byte size for every generated pack file except the manifest itself.
 
@@ -57,7 +58,7 @@ Records:
 
 - bounded graph nodes and links;
 - focus + depth;
-- quality/freshness/risk policy fingerprints.
+- quality/freshness/risk policy fingerprints and, when enabled, the effective lifecycle-policy fingerprint.
 
 It does not depend on the current clock. The same semantic slice/scope/policies therefore produces the same pack ID.
 
@@ -80,6 +81,8 @@ Verification detects:
 - semantic `pack_id` mismatch between `graph.json` and the recorded focus/depth/policy fingerprints.
 
 This protects generated hand-off integrity. It is not a cryptographic signature or external trust service; signed attestations remain a later integration boundary.
+
+Lifecycle assurance is evaluated only within the retained graph slice. The chosen focus and depth must include the relevant requirement-to-implementation-to-evidence paths; the pack does not make claims about excluded artifacts.
 
 ## Intended workflow
 

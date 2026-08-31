@@ -4,8 +4,8 @@
   "purpose": "Connect project artifacts and evidence into an explicit graph for traceability, coverage, freshness, lifecycle, risk assurance, impact, and quality gates.",
   "human_url": "https://dkharlanau.github.io/project-evidence-graph/",
   "repository": "https://github.com/dkharlanau/project-evidence-graph",
-  "boundaries": ["not a replacement for source trackers or repositories", "do not infer links from semantic similarity", "unresolved external references stay diagnostics", "coverage must not hide evidence freshness or risk context"],
-  "capabilities": ["validate evidence graph", "trace artifact paths", "requirement-to-test/evidence coverage", "freshness classification", "explicit evidence and decision lifecycle", "stale-by-change detection", "risk-weighted assurance", "impact analysis", "quality/freshness/lifecycle/risk policy gates", "CSV/GitHub/Jira/ALM-style import", "static graph exploration"],
+  "boundaries": ["not a replacement for source trackers or repositories", "do not infer links from semantic similarity", "unresolved external references stay diagnostics", "coverage must not hide evidence freshness, lifecycle state, or risk context", "no direct Transformation Graph or Enterprise Change Graph adapter is implemented"],
+  "capabilities": ["validate evidence graph", "trace artifact paths", "requirement-to-test/evidence coverage", "freshness classification", "explicit evidence and decision lifecycle", "stale-by-change detection", "risk-weighted assurance", "impact analysis", "quality/freshness/lifecycle/risk policy gates", "lifecycle-aware assurance review, bounded context, and retained evidence pack", "CSV/GitHub/Jira/ALM-style import", "Reconciliation as Code, Cutover Graph, and Data Relationship Map import", "static graph exploration"],
   "entrypoints": [
     {"type":"cli","command":"python evidence_graph.py <graph.json> analyze"},
     {"type":"cli","command":"python evidence_graph.py <graph.json> path <source-id> <target-id>"},
@@ -13,12 +13,15 @@
     {"type":"cli","command":"python quality_gate.py <graph.json> <policy.json>"},
     {"type":"cli","command":"python evidence_freshness.py <graph.json> <policy.json>"},
     {"type":"cli","command":"project-evidence-graph lifecycle <graph.json> [--policy policy.json]"},
+    {"type":"cli","command":"project-evidence-graph review <graph.json> [--lifecycle] [--lifecycle-policy policy.json]"},
+    {"type":"cli","command":"project-evidence-graph context <graph.json> [--focus ID] [--lifecycle]"},
+    {"type":"cli","command":"project-evidence-graph pack build <graph.json> <output-dir> [--lifecycle]"},
     {"type":"cli","command":"python risk_assurance.py <graph.json> <policy.json>"}
   ],
   "safe_agent_loop": ["validate graph and explicit references", "trace exact artifact paths", "calculate coverage", "evaluate freshness and risk policy", "surface unresolved links and unsupported claims", "return evidence IDs/provenance with assurance statements"],
   "related": [
     {"product":"reconciliation-as-code","relationship":"data assurance evidence"},
-    {"product":"cutover-graph","relationship":"checkpoint and go-live evidence"},
-    {"product":"enterprise-change-graph","relationship":"change-impact and regression evidence"}
+    {"product":"cutover-graph","relationship":"implemented artifact-index import for fail-closed checkpoint and go-live evidence"},
+    {"product":"data-relationship-map","relationship":"implemented artifact-index import for observed relationships and producer-owned findings"}
   ]
 }

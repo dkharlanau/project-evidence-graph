@@ -55,11 +55,12 @@ project exports + domain evidence
 ```bash
 project-evidence-graph review examples/customer-change.json \
   --quality-policy examples/quality-policy.json \
+  --lifecycle \
   --markdown build/project-review.md \
   --html build/project-review.html
 ```
 
-The review produces one explicit decision from the supplied deterministic gates and surfaces the assurance gaps behind that decision.
+The review produces one explicit decision from the enabled deterministic gates and surfaces the assurance gaps behind that decision. `--lifecycle` applies the documented default lifecycle policy; `--lifecycle-policy policy.json` enables the same gate with explicit overrides.
 
 ### 2. Build bounded context
 
@@ -67,6 +68,7 @@ The review produces one explicit decision from the supplied deterministic gates 
 project-evidence-graph context examples/customer-change.json \
   --focus REQ-001 \
   --depth 3 \
+  --lifecycle \
   --output build/context.json
 ```
 
@@ -77,7 +79,8 @@ A bounded context keeps the focus artifact, nearby traceability, external refere
 ```bash
 project-evidence-graph pack build examples/customer-change.json build/release-pack \
   --focus REQ-001 \
-  --depth 3
+  --depth 3 \
+  --lifecycle
 
 project-evidence-graph pack verify build/release-pack
 ```
@@ -121,7 +124,7 @@ Lifecycle links point from the current artifact to the retained artifact it `sup
 - requirement coverage by **fresh** evidence, not merely reachable evidence;
 - risk-weighted test/evidence coverage and uncovered-risk scoring;
 - machine-readable quality, freshness and risk policies;
-- consolidated JSON/Markdown/HTML project assurance review.
+- consolidated JSON/Markdown/HTML project assurance review, including optional lifecycle and stale-by-change gating.
 
 ### Cross-repository composition
 
@@ -141,6 +144,7 @@ Lifecycle links point from the current artifact to the retained artifact it `sup
 
 - compact bounded context with deterministic `context_id`;
 - integrity-verifiable evidence packs with deterministic `pack_id`;
+- lifecycle decisions retained in bounded context and pack reviews, with the effective policy fingerprinted in the pack manifest;
 - per-file SHA-256 manifest and independent pack verification;
 - reusable zero-build browser graph explorer;
 - installable `project-evidence-graph` command;
@@ -215,6 +219,20 @@ project-evidence-graph import-relationship examples/relationship/artifact-index.
 For Data Relationship Map, `policy_passed: false` is not treated as a broken adapter contract: those findings are the evidence being imported. A malformed producer contract or invalid `eac://` reference fails loud. Missing observation time remains importable but will fail a strict freshness policy such as `missing_timestamp: fail`; a valid producer `observed_at` is preserved on imported evidence.
 
 Domain products remain semantic owners of their artifacts. Project Evidence Graph materializes only the assurance facts and references it needs.
+
+## Handoff contracts
+
+The suite has three implemented machine handoffs into Project Evidence Graph:
+
+| Producer | Accepted input | Imported assurance meaning |
+|---|---|---|
+| Reconciliation as Code | evidence JSON | observed reconciliation runs and checks, with producer fingerprints retained |
+| Cutover Graph | artifact-index JSON | tasks, checkpoints and contingencies; a checkpoint becomes passing evidence only when the producer index records complete external-evidence assurance |
+| Data Relationship Map | artifact-index JSON | observed objects and relationships as evidence, and failed relationship-policy findings as externally owned defects |
+
+The import commands above validate these producer contracts and preserve their stable `eac://` references. An import does not connect a producer artifact to a project requirement: the project must add an explicit bridge with a reviewable reason.
+
+Transformation Graph and Enterprise Change Graph are related analysis products, but this repository does not currently implement direct adapters for either. Exchange through an agreed export plus an explicit project-owned bridge, or keep the products separate; do not describe conceptual adjacency as an automated handoff.
 
 ## Explicit bridges, not guessed traceability
 
@@ -310,7 +328,7 @@ Project Evidence Graph owns **project assurance relationships and derived assura
 
 Prefer stable references and reproducible projections over copying the same business fact into several repositories.
 
-Current next step: compare bounded evidence packs between rehearsal, release and production, integrate lifecycle state into the consolidated assurance review, and define resolution semantics for externally owned findings without rewriting producer history.
+Current next step: compare bounded evidence packs between rehearsal, release and production, and define resolution semantics for externally owned findings without rewriting producer history.
 
 See [ROADMAP.md](ROADMAP.md) for the current sequence.
 
@@ -329,18 +347,21 @@ See [ROADMAP.md](ROADMAP.md) for the current sequence.
 
 ## Related projects
 
-- [Mapping as Code](https://github.com/dkharlanau/mapping-as-code)
-- [Interface as Code](https://github.com/dkharlanau/interface-as-code)
-- [Process as Code](https://github.com/dkharlanau/process-as-code)
-- [Reconciliation as Code](https://github.com/dkharlanau/reconciliation-as-code)
-- [Transformation Graph](https://github.com/dkharlanau/transformation-graph)
-- [Enterprise Change Graph](https://github.com/dkharlanau/enterprise-change-graph)
-- [Decision Tables as Code](https://github.com/dkharlanau/decision-tables-as-code)
-- [Data Relationship Map](https://github.com/dkharlanau/data-relationship-map)
-- [Cutover Graph](https://github.com/dkharlanau/cutover-graph)
+- [Reconciliation as Code](https://github.com/dkharlanau/reconciliation-as-code) produces reconciliation evidence that the `import-reconciliation` adapter preserves as project evidence.
+- [Cutover Graph](https://github.com/dkharlanau/cutover-graph) produces a fail-closed artifact index that the `import-cutover` adapter turns into checkpoint assurance.
+- [Data Relationship Map](https://github.com/dkharlanau/data-relationship-map) produces observed relationship evidence and policy findings for the `import-relationship` adapter.
+- [Transformation Graph](https://github.com/dkharlanau/transformation-graph) models source-to-target transformation lineage; there is no direct adapter today.
+- [Enterprise Change Graph](https://github.com/dkharlanau/enterprise-change-graph) models change dependencies and regression impact; there is no direct adapter today.
 
 Portfolio map: https://dkharlanau.github.io/products/
 
 ## Status
 
-**Executable MVP / active development, v0.2.0.** Imports, relationship-finding assurance, cross-repository composition, traceability/impact, quality/freshness/risk assurance, evidence lifecycle, project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gaps are bounded evidence-pack comparison, lifecycle-aware consolidated review, and externally owned finding resolution—not the core traceability engine.
+**Executable MVP / active development, v0.2.0.** Imports, relationship-finding assurance, cross-repository composition, traceability/impact, quality/freshness/risk/lifecycle assurance, lifecycle-aware project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gaps are bounded evidence-pack comparison and externally owned finding resolution—not the core traceability engine.
+
+## About the author
+
+Created and maintained by **Dzmitryi Kharlanau**, an SAP consultant and system analyst working across enterprise architecture, data, integration, operations, and practical AI.
+
+- [Website and knowledge base](https://dkharlanau.github.io/)
+- [LinkedIn](https://www.linkedin.com/in/dkharlanau/)

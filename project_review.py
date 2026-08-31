@@ -12,6 +12,8 @@ from typing import Any
 from evidence_freshness import evaluate as evaluate_freshness
 from evidence_freshness import load_policy as load_freshness_policy
 from evidence_graph import build_report, load_graph
+from evidence_lifecycle import evaluate as evaluate_lifecycle
+from evidence_lifecycle import load_policy as load_lifecycle_policy
 from quality_gate import evaluate as evaluate_quality
 from quality_gate import load_policy as load_quality_policy
 from risk_assurance import evaluate as evaluate_risk
@@ -23,14 +25,17 @@ def build_summary(
     quality_policy: dict[str, Any] | None = None,
     freshness_policy: dict[str, Any] | None = None,
     risk_policy: dict[str, Any] | None = None,
+    lifecycle_enabled: bool = False,
+    lifecycle_policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     base = build_report(graph)
     quality = evaluate_quality(base, quality_policy) if quality_policy is not None else None
     freshness = evaluate_freshness(graph, freshness_policy) if freshness_policy is not None else None
     risk = evaluate_risk(graph, risk_policy) if risk_policy is not None else None
+    lifecycle = evaluate_lifecycle(graph, lifecycle_policy) if lifecycle_enabled or lifecycle_policy is not None else None
 
     gate_results = [base["validation"]["valid"]]
-    for section in (quality, freshness, risk):
+    for section in (quality, freshness, risk, lifecycle):
         if section is not None:
             gate_results.append(bool(section["passed"]))
 
@@ -48,6 +53,7 @@ def build_summary(
         "quality_policy": quality,
         "freshness_policy": freshness,
         "risk_policy": risk,
+        "lifecycle_policy": lifecycle,
     }
 
 
@@ -64,6 +70,7 @@ def render_markdown(summary: dict[str, Any], title: str = "Project Assurance Rev
     freshness = summary.get("freshness_policy")
     risk = summary.get("risk_policy")
     quality = summary.get("quality_policy")
+    lifecycle = summary.get("lifecycle_policy")
 
     lines = [
         f"# {title}",
@@ -85,6 +92,10 @@ def render_markdown(summary: dict[str, Any], title: str = "Project Assurance Rev
         lines.append(f"| Risk-weighted evidence coverage | {_pct(risk['weighted_evidence_coverage'])} |")
         lines.append(f"| Uncovered test risk score | {risk['uncovered_test_risk_score']:.2f} |")
         lines.append(f"| Uncovered evidence risk score | {risk['uncovered_evidence_risk_score']:.2f} |")
+    if lifecycle is not None:
+        lines.append(f"| Lifecycle valid | {'yes' if lifecycle['lifecycle_valid'] else 'no'} |")
+        lines.append(f"| Active evidence stale by change | {len(lifecycle['stale_by_change'])} |")
+        lines.append(f"| Superseded evidence retained | {len(lifecycle['superseded_evidence'])} |")
 
     lines += [
         "",
@@ -103,12 +114,16 @@ def render_markdown(summary: dict[str, Any], title: str = "Project Assurance Rev
         lines.append(f"- Risk-weighted test gaps: {_items(uncovered_test)}")
         lines.append(f"- Risk-weighted evidence gaps: {_items(uncovered_evidence)}")
         lines.append(f"- Unknown requirement risk: {_items([item['requirement'] for item in risk['unknown_risks']])}")
+    if lifecycle is not None:
+        lines.append(f"- Active evidence stale by change: {_items([item['evidence'] for item in lifecycle['stale_by_change']])}")
+        lines.append(f"- Unknown evidence age after change: {_items([item['evidence'] for item in lifecycle['unknown_by_change']])}")
+        lines.append(f"- Requirements without current evidence: {_items(lifecycle['requirements_without_current_evidence'])}")
 
     lines += ["", "## Policy gates", ""]
-    if quality is None and freshness is None and risk is None:
-        lines.append("No optional policy files were supplied; the decision reflects graph validity only.")
+    if quality is None and freshness is None and risk is None and lifecycle is None:
+        lines.append("No optional assurance gates were enabled; the decision reflects graph validity only.")
     else:
-        for name, result in (("Quality", quality), ("Freshness", freshness), ("Risk", risk)):
+        for name, result in (("Quality", quality), ("Freshness", freshness), ("Risk", risk), ("Lifecycle", lifecycle)):
             if result is None:
                 continue
             lines.append(f"### {name}")
@@ -133,6 +148,7 @@ def render_html(summary: dict[str, Any], title: str = "Project Assurance Review"
     raw = summary["raw_coverage"]
     freshness = summary.get("freshness_policy")
     risk = summary.get("risk_policy")
+    lifecycle = summary.get("lifecycle_policy")
     rows = [
         ("Graph valid", "yes" if summary["validation"]["valid"] else "no"),
         ("Raw test coverage", _pct(raw["test_coverage"])),
@@ -147,6 +163,12 @@ def render_html(summary: dict[str, Any], title: str = "Project Assurance Review"
             ("Uncovered test risk", f"{risk['uncovered_test_risk_score']:.2f}"),
             ("Uncovered evidence risk", f"{risk['uncovered_evidence_risk_score']:.2f}"),
         ]
+    if lifecycle is not None:
+        rows += [
+            ("Lifecycle valid", "yes" if lifecycle["lifecycle_valid"] else "no"),
+            ("Active evidence stale by change", len(lifecycle["stale_by_change"])),
+            ("Superseded evidence retained", len(lifecycle["superseded_evidence"])),
+        ]
     score_rows = "".join(f"<tr><td>{html.escape(label)}</td><td>{html.escape(str(value))}</td></tr>" for label, value in rows)
 
     gaps = [
@@ -158,6 +180,10 @@ def render_html(summary: dict[str, Any], title: str = "Project Assurance Review"
         gaps.append(f"Stale evidence: {_items([item['evidence'] for item in freshness['stale']])}")
     if risk is not None:
         gaps.append(f"Unknown requirement risk: {_items([item['requirement'] for item in risk['unknown_risks']])}")
+    if lifecycle is not None:
+        gaps.append(f"Active evidence stale by change: {_items([item['evidence'] for item in lifecycle['stale_by_change']])}")
+        gaps.append(f"Unknown evidence age after change: {_items([item['evidence'] for item in lifecycle['unknown_by_change']])}")
+        gaps.append(f"Requirements without current evidence: {_items(lifecycle['requirements_without_current_evidence'])}")
     gap_html = "".join(f"<li>{html.escape(item)}</li>" for item in gaps)
     machine = html.escape(json.dumps(summary, indent=2, sort_keys=True))
 
@@ -191,6 +217,8 @@ def main() -> int:
     parser.add_argument("--quality-policy")
     parser.add_argument("--freshness-policy")
     parser.add_argument("--risk-policy")
+    parser.add_argument("--lifecycle", action="store_true", help="enable lifecycle and stale-by-change assurance with default policy")
+    parser.add_argument("--lifecycle-policy", help="enable lifecycle assurance with a JSON policy")
     parser.add_argument("--markdown")
     parser.add_argument("--html")
     parser.add_argument("--title", default="Project Assurance Review")
@@ -202,6 +230,8 @@ def main() -> int:
         load_quality_policy(args.quality_policy) if args.quality_policy else None,
         load_freshness_policy(args.freshness_policy) if args.freshness_policy else None,
         load_risk_policy(args.risk_policy) if args.risk_policy else None,
+        args.lifecycle or bool(args.lifecycle_policy),
+        load_lifecycle_policy(args.lifecycle_policy) if args.lifecycle_policy else None,
     )
     if args.markdown:
         Path(args.markdown).write_text(render_markdown(summary, args.title), encoding="utf-8")

@@ -31,6 +31,7 @@ jobs:
           cp docs/agent-manifest.json _site/agent-manifest.json
           python project_review.py examples/customer-change.json \
             --quality-policy examples/quality-policy.json \
+            --lifecycle \
             --markdown _site/demo/project-review.md \
             --html _site/demo/project-review.html
           python evidence_lifecycle.py examples/evidence-lifecycle.json \

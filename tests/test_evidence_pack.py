@@ -67,6 +67,15 @@ class EvidencePackTests(unittest.TestCase):
             b = build_pack(self.graph, second, focus="REQ-1", depth=2, quality_policy=self.quality)
             self.assertEqual(a["pack_id"], b["pack_id"])
 
+    def test_lifecycle_assurance_is_retained_and_fingerprinted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = build_pack(self.graph, tmp, focus="REQ-1", depth=2, lifecycle_enabled=True)
+            context = json.loads((Path(tmp) / "context.json").read_text())
+            self.assertTrue(context["assurance"]["lifecycle_policy"]["passed"])
+            self.assertEqual(context["assurance"]["lifecycle_policy"]["active_evidence"], [self.recon_ref])
+            self.assertIsNotNone(manifest["policy_fingerprints"]["lifecycle"])
+            self.assertIn("Lifecycle valid", (Path(tmp) / "review.md").read_text())
+
     def test_modified_file_breaks_verification(self):
         with tempfile.TemporaryDirectory() as tmp:
             build_pack(self.graph, tmp, focus="REQ-1", depth=2)

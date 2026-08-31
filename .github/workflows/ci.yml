@@ -41,11 +41,12 @@ jobs:
           fi
           grep -q 'active_evidence_stale_by_change' /tmp/stale-by-change.json
           project-evidence-graph context examples/customer-change.json \
-            --focus REQ-001 --depth 3 --output /tmp/installed-context.json
+            --focus REQ-001 --depth 3 --lifecycle --output /tmp/installed-context.json
           test -s /tmp/installed-context.json
           project-evidence-graph pack build examples/customer-change.json /tmp/installed-pack \
-            --focus REQ-001 --depth 3
+            --focus REQ-001 --depth 3 --lifecycle
           project-evidence-graph pack verify /tmp/installed-pack
+          grep -q '"lifecycle"' /tmp/installed-pack/manifest.json
           project-evidence-graph import-relationship examples/relationship/artifact-index.json \
             --output /tmp/installed-relationship-evidence.json
           project-evidence-graph analyze /tmp/installed-relationship-evidence.json
@@ -85,8 +86,13 @@ jobs:
           python evidence_graph.py /tmp/merged-project.json path REQ-COUNTRY eac://dkharlanau/data-relationship-map/finding/cardinality/mapped_to/outgoing/AFS:4711
           python project_review.py /tmp/merged-project.json --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --markdown /tmp/project-review.md --html /tmp/project-review.html
           test -s /tmp/project-review.md && test -s /tmp/project-review.html
+          python project_review.py examples/evidence-lifecycle.json --lifecycle --markdown /tmp/lifecycle-review.md --html /tmp/lifecycle-review.html
+          grep -q 'Lifecycle valid' /tmp/lifecycle-review.md
           python project_context.py /tmp/merged-project.json --focus REQ-COUNTRY --depth 7 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json --output /tmp/project-context.json
           test -s /tmp/project-context.json
           python evidence_pack.py build /tmp/merged-project.json /tmp/release-evidence-pack --focus REQ-COUNTRY --depth 7 --quality-policy examples/quality-policy.json --freshness-policy examples/freshness-policy.json --risk-policy examples/risk-policy.json
           python evidence_pack.py verify /tmp/release-evidence-pack
           test -s /tmp/release-evidence-pack/manifest.json && test -s /tmp/release-evidence-pack/graph.json && test -s /tmp/release-evidence-pack/context.json && test -s /tmp/release-evidence-pack/review.md && test -s /tmp/release-evidence-pack/review.html
+          python evidence_pack.py build examples/evidence-lifecycle.json /tmp/lifecycle-evidence-pack --focus REQ-CUSTOMER --depth 4 --lifecycle
+          python evidence_pack.py verify /tmp/lifecycle-evidence-pack
+          grep -q 'Lifecycle valid' /tmp/lifecycle-evidence-pack/review.md
