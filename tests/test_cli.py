@@ -13,6 +13,7 @@ class UnifiedCliTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertIn("review", output.getvalue())
         self.assertIn("history", output.getvalue())
+        self.assertIn("lifecycle", output.getvalue())
         self.assertIn("pack", output.getvalue())
         self.assertIn("import-relationship", output.getvalue())
 
@@ -38,6 +39,14 @@ class UnifiedCliTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertIn('"external_source": "data-relationship-map"', output.getvalue())
         self.assertIn('"type": "defect"', output.getvalue())
+
+    def test_lifecycle_dispatches_to_evaluator(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            result = peg_cli.main(["lifecycle", "examples/evidence-lifecycle.json"])
+        self.assertEqual(result, 0)
+        self.assertIn('"superseded_evidence"', output.getvalue())
+        self.assertIn('"EVID-CUSTOMER-OLD"', output.getvalue())
 
     def test_unknown_command_fails_loudly(self):
         error = io.StringIO()

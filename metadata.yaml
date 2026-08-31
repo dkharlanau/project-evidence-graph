@@ -31,6 +31,8 @@ implementation:
   bounded_context: true
   evidence_packs: true
   historical_assurance: true
+  evidence_lifecycle: true
+  stale_by_change: true
   test_suite: true
   ci: true
   sap_access_required: false

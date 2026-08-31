@@ -37,12 +37,19 @@
 - derive deterministic retest/evidence-refresh candidates with current tests and evidence
 - render historical assurance comparison as JSON or Markdown
 
-## Now — evidence lifecycle
+## Done — evidence lifecycle
 
-1. Add explicit `supersedes` / `replaces` lifecycle semantics for evidence and decisions.
-2. Detect **stale-by-change** evidence: implementation changed after the observation the evidence is meant to support.
-3. Compare bounded evidence packs between rehearsal, release and production rather than comparing only whole graphs.
-4. Define resolution semantics for externally owned findings without rewriting producer history.
+- explicit `supersedes` / `replaces` lifecycle semantics for evidence and decisions
+- deterministic validation for replacement cycles, ambiguity and cross-type replacement
+- inactive historical evidence retained without contributing to current assurance
+- **stale-by-change** detection when implementation changed after the observation the active evidence is meant to support
+- installed CLI, JSON/Markdown output, reference examples, tests and CI coverage
+
+## Now — retained assurance comparison and resolution
+
+1. Compare bounded evidence packs between rehearsal, release and production rather than comparing only whole graphs.
+2. Integrate lifecycle state and stale-by-change findings into the consolidated assurance review and retained packs.
+3. Define resolution semantics for externally owned findings without rewriting producer history.
 
 ## Next — assurance trends and review workflow
 

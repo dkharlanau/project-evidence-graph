@@ -25,10 +25,17 @@ jobs:
       - uses: actions/checkout@v6
       - name: Stage product site and explorer
         run: |
-          mkdir -p _site/explorer
+          mkdir -p _site/explorer _site/demo
           cp docs/product.html _site/index.html
           cp docs/index.html _site/explorer/index.html
           cp docs/agent-manifest.json _site/agent-manifest.json
+          python project_review.py examples/customer-change.json \
+            --quality-policy examples/quality-policy.json \
+            --markdown _site/demo/project-review.md \
+            --html _site/demo/project-review.html
+          python evidence_lifecycle.py examples/evidence-lifecycle.json \
+            --json-output _site/demo/evidence-lifecycle.json \
+            --markdown _site/demo/evidence-lifecycle.md
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4

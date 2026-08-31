@@ -12,6 +12,7 @@ import csv_adapter
 import cutover_adapter
 import evidence_freshness
 import evidence_graph
+import evidence_lifecycle
 import evidence_pack
 import github_adapter
 import graph_merge
@@ -34,6 +35,7 @@ COMMANDS: dict[str, tuple[Main, str]] = {
     "pack": (evidence_pack.main, "Build or verify a deterministic evidence pack"),
     "quality": (quality_gate.main, "Evaluate project traceability quality policy"),
     "freshness": (evidence_freshness.main, "Evaluate evidence freshness policy"),
+    "lifecycle": (evidence_lifecycle.main, "Evaluate replacements and stale-by-change evidence"),
     "risk": (risk_assurance.main, "Evaluate risk-weighted assurance policy"),
     "merge": (graph_merge.main, "Merge independently owned evidence fragments"),
     "cross-repo": (cross_repo.main, "Build explicit cross-repository traceability"),

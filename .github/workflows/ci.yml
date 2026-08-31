@@ -30,6 +30,16 @@ jobs:
           project-evidence-graph analyze examples/customer-change.json
           project-evidence-graph path examples/customer-change.json REQ-001 EVID-001
           project-evidence-graph impact examples/customer-change.json TEST-001
+          project-evidence-graph lifecycle examples/evidence-lifecycle.json \
+            --json-output /tmp/evidence-lifecycle.json \
+            --markdown /tmp/evidence-lifecycle.md
+          test -s /tmp/evidence-lifecycle.json && test -s /tmp/evidence-lifecycle.md
+          if project-evidence-graph lifecycle examples/evidence-stale-by-change.json \
+            --json-output /tmp/stale-by-change.json; then
+            echo "Expected stale-by-change evidence to fail the lifecycle gate" >&2
+            exit 1
+          fi
+          grep -q 'active_evidence_stale_by_change' /tmp/stale-by-change.json
           project-evidence-graph context examples/customer-change.json \
             --focus REQ-001 --depth 3 --output /tmp/installed-context.json
           test -s /tmp/installed-context.json
@@ -49,6 +59,8 @@ jobs:
           python quality_gate.py examples/customer-change.json examples/quality-policy.json
           python evidence_freshness.py examples/evidence-freshness.json examples/freshness-policy.json
           python risk_assurance.py examples/risk-assurance.json examples/risk-policy.json
+          python evidence_lifecycle.py examples/evidence-lifecycle.json --json-output /tmp/lifecycle.json --markdown /tmp/lifecycle.md
+          test -s /tmp/lifecycle.json && test -s /tmp/lifecycle.md
           python csv_adapter.py examples/csv/manifest.json --output /tmp/project-evidence.json
           python evidence_graph.py /tmp/project-evidence.json analyze
           python github_adapter.py examples/github/export.json --config examples/github/config.json --output /tmp/github-evidence.json

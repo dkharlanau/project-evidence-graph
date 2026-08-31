@@ -94,6 +94,16 @@ project-evidence-graph history before.json after.json \
 
 Historical assurance compares more than raw graph bytes. It identifies node/link drift, rationale drift, implementation drift, coverage changes, decision changes and requirements that need evidence refresh because their implementation changed.
 
+### 5. Evaluate evidence lifecycle
+
+```bash
+project-evidence-graph lifecycle examples/evidence-lifecycle.json \
+  --json-output build/evidence-lifecycle.json \
+  --markdown build/evidence-lifecycle.md
+```
+
+Lifecycle links point from the current artifact to the retained artifact it `supersedes` or `replaces`. Only same-type evidence-to-evidence and decision-to-decision links are accepted. The evaluator also fails by default when active evidence predates a changed implementation that it is meant to support.
+
 ## What works today
 
 ### Traceability and analysis
@@ -143,6 +153,14 @@ Historical assurance compares more than raw graph bytes. It identifies node/link
 - assurance/coverage decision deltas;
 - changed-implementation detection beneath requirements;
 - deterministic retest/evidence-refresh candidates showing current tests and current evidence.
+
+### Evidence lifecycle
+
+- explicit `supersedes` and `replaces` semantics for evidence and decisions;
+- retained but inactive historical evidence rather than deletion;
+- replacement-cycle, ambiguous replacement and cross-type replacement validation;
+- active-evidence stale-by-change detection using explicit timestamps;
+- machine-readable and Markdown lifecycle decisions through the installed CLI.
 
 ## Import project evidence without inventing traceability
 
@@ -292,7 +310,7 @@ Project Evidence Graph owns **project assurance relationships and derived assura
 
 Prefer stable references and reproducible projections over copying the same business fact into several repositories.
 
-Current next step: make evidence lifecycle explicit (`supersedes`, `replaces`, stale-by-change), including resolution semantics for externally owned findings without rewriting producer history.
+Current next step: compare bounded evidence packs between rehearsal, release and production, integrate lifecycle state into the consolidated assurance review, and define resolution semantics for externally owned findings without rewriting producer history.
 
 See [ROADMAP.md](ROADMAP.md) for the current sequence.
 
@@ -325,4 +343,4 @@ Portfolio map: https://dkharlanau.github.io/products/
 
 ## Status
 
-**Executable MVP / active development, v0.2.0.** Imports, relationship-finding assurance, cross-repository composition, traceability/impact, quality/freshness/risk assurance, project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gap is evidence lifecycle and stale-by-change semantics—not the core traceability engine.
+**Executable MVP / active development, v0.2.0.** Imports, relationship-finding assurance, cross-repository composition, traceability/impact, quality/freshness/risk assurance, evidence lifecycle, project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gaps are bounded evidence-pack comparison, lifecycle-aware consolidated review, and externally owned finding resolution—not the core traceability engine.
