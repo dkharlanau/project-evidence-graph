@@ -12,7 +12,7 @@ portfolio:
   brand_value: 10
 
 status: executable-mvp
-version: 0.2.0
+version: 0.2.1
 
 implementation:
   repository_created: true

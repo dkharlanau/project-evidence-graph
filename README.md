@@ -6,6 +6,29 @@ Project Evidence Graph (`project-evidence-graph`) turns fragmented project artif
 
 The reference use case is enterprise/SAP transformation, but the core model is vendor-neutral and does not require SAP access.
 
+## 30-second proof
+
+With Python 3.10 or later available as `python3`, run this from a repository checkout:
+
+```bash
+proof_dir="$(mktemp -d /tmp/peg-proof.XXXXXX)" \
+  && python3 -m venv "$proof_dir/venv" \
+  && . "$proof_dir/venv/bin/activate" \
+  && python -m pip install . --disable-pip-version-check --quiet \
+  && project-evidence-graph analyze examples/customer-change.json > "$proof_dir/analysis.json" \
+  && project-evidence-graph pack build examples/customer-change.json "$proof_dir/evidence-pack" \
+    --quality-policy examples/quality-policy.json \
+    --freshness-policy examples/freshness-policy.json \
+    --risk-policy examples/risk-policy.json \
+    --lifecycle \
+  && project-evidence-graph pack verify "$proof_dir/evidence-pack" \
+  && printf 'Proof artifacts: %s\n' "$proof_dir"
+```
+
+Expected artifacts: `analysis.json` plus an integrity-verified `evidence-pack/` containing `manifest.json`, the bounded graph and context, and Markdown/HTML reviews. The synthetic fixture intentionally produces an assurance decision of `FAIL` because one requirement is uncovered; pack verification still succeeds because it verifies retained-file integrity. Compare the review with the [public generated walkthrough](https://dkharlanau.github.io/project-evidence-graph/demo/project-review.html) or open the [public product documentation](https://dkharlanau.github.io/project-evidence-graph/).
+
+This proof demonstrates deterministic structural traceability, policy evaluation, and pack integrity for supplied synthetic input. It does not prove that a source system is complete, establish business acceptance, or certify production readiness.
+
 ## The question it answers
 
 A project may have requirements in Jira, mappings in spreadsheets, tests in another tool, reconciliation evidence in a release folder, identity findings in exported data and cutover acceptance in a plan. A green traceability matrix can still hide stale evidence or a requirement whose implementation changed after it was tested.
@@ -359,7 +382,7 @@ Portfolio map: https://dkharlanau.github.io/products/
 
 ## Release and adoption
 
-- [v0.2.0 release notes](release/v0.2.0.md)
+- [v0.2.1 release notes](release/v0.2.1.md)
 - [release and compatibility policy](docs/RELEASES.md)
 - [golden quickstart](docs/GOLDEN_QUICKSTART.md)
 - [15-minute external usability test](docs/USABILITY_TEST_15_MIN.md)
@@ -368,7 +391,7 @@ Portfolio map: https://dkharlanau.github.io/products/
 
 ## Status
 
-**Executable MVP / active development, v0.2.0.** Imports, relationship-finding assurance, cross-repository composition, traceability/impact, quality/freshness/risk/lifecycle assurance, lifecycle-aware project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gaps are bounded evidence-pack comparison and externally owned finding resolution—not the core traceability engine.
+**Executable MVP / active development, v0.2.1.** Imports, relationship-finding assurance, cross-repository composition, traceability/impact, quality/freshness/risk/lifecycle assurance, lifecycle-aware project review, bounded context, evidence packs, historical assurance, installed CLI, examples, tests and CI are implemented. The next product gaps are bounded evidence-pack comparison and externally owned finding resolution—not the core traceability engine.
 
 ## About the author
 

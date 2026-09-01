@@ -19,4 +19,4 @@ GitHub Releases attach a reproducible wheel, a deterministic `git archive` sourc
 - Pack verification checks recorded file integrity; it does not establish business acceptance, retention compliance, or production truth.
 - The browser explorer is a generated view, not the canonical graph editor.
 
-See the [golden quickstart](GOLDEN_QUICKSTART.md) and [v0.2.0 release notes](../release/v0.2.0.md).
+See the [golden quickstart](GOLDEN_QUICKSTART.md) and [v0.2.1 release notes](../release/v0.2.1.md).
