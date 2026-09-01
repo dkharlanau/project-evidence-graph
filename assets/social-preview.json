@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "dimensions": {"width": 1280, "height": 640},
+  "track": "Transformation assurance",
+  "title": "Project Evidence Graph",
+  "subtitle": "Trace requirements, decisions, changes, tests and evidence as one assurance graph.",
+  "repository": "project-evidence-graph",
+  "author": "Dzmitryi Kharlanau",
+  "motif": "evidence",
+  "background": "#f4f1e8",
+  "ink": "#17202a",
+  "muted": "#5f6770",
+  "accent": "#b33951",
+  "panel": "#ffffff",
+  "generated_by": "dkharlanau.github.io/scripts/render_repository_social_preview.py",
+  "claim_boundary": "Traceability purpose only; positive assurance still depends on explicit policy and evidence."
+}
