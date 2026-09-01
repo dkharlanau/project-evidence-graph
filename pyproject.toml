@@ -32,8 +32,10 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/dkharlanau/project-evidence-graph"
+Documentation = "https://dkharlanau.github.io/project-evidence-graph/"
 Repository = "https://github.com/dkharlanau/project-evidence-graph"
 Issues = "https://github.com/dkharlanau/project-evidence-graph/issues"
+Changelog = "https://github.com/dkharlanau/project-evidence-graph/blob/main/CHANGELOG.md"
 Portfolio = "https://dkharlanau.github.io/products/"
 
 [project.scripts]

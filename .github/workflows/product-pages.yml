@@ -3,7 +3,7 @@ name: Publish Product Page
 on:
   push:
     branches: [main]
-    paths: ["docs/product.html", "docs/index.html", "docs/agent-manifest.json", ".github/workflows/product-pages.yml"]
+    paths: ["docs/product.html", "docs/index.html", "docs/agent-manifest.json", "assets/social-preview.png", ".github/workflows/product-pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -29,6 +29,8 @@ jobs:
           cp docs/product.html _site/index.html
           cp docs/index.html _site/explorer/index.html
           cp docs/agent-manifest.json _site/agent-manifest.json
+          mkdir -p _site/assets
+          cp assets/social-preview.png _site/assets/social-preview.png
           python project_review.py examples/customer-change.json \
             --quality-policy examples/quality-policy.json \
             --lifecycle \

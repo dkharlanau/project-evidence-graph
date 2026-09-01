@@ -18,6 +18,8 @@ Project Evidence Graph asks:
 
 Requires Python 3.10+.
 
+For a pinned release, expected output digest, and verified evidence-pack path, use the [golden quickstart](docs/GOLDEN_QUICKSTART.md).
+
 ```bash
 python -m pip install .
 
@@ -354,6 +356,15 @@ See [ROADMAP.md](ROADMAP.md) for the current sequence.
 - [Enterprise Change Graph](https://github.com/dkharlanau/enterprise-change-graph) models change dependencies and regression impact; there is no direct adapter today.
 
 Portfolio map: https://dkharlanau.github.io/products/
+
+## Release and adoption
+
+- [v0.2.0 release notes](release/v0.2.0.md)
+- [release and compatibility policy](docs/RELEASES.md)
+- [golden quickstart](docs/GOLDEN_QUICKSTART.md)
+- [15-minute external usability test](docs/USABILITY_TEST_15_MIN.md)
+- [contributing and feedback](CONTRIBUTING.md)
+- [changelog](CHANGELOG.md)
 
 ## Status
 
