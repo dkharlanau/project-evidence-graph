@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dkharlanau/agent-ready-web-profile/v0.1.0/schema/site-profile.schema.json",
+  "profileVersion": "0.1",
+  "id": "project-evidence-graph",
+  "name": "Project Evidence Graph",
+  "canonicalUrl": "https://dkharlanau.github.io/project-evidence-graph/",
+  "description": "Connect project artifacts and evidence into an explicit graph for traceability, coverage, freshness, lifecycle, risk assurance, impact, and quality gates.",
+  "languages": [
+    "en"
+  ],
+  "trust": {
+    "provenance": "https://github.com/dkharlanau/project-evidence-graph/blob/main/README.md",
+    "license": "https://github.com/dkharlanau/project-evidence-graph/blob/main/LICENSE"
+  },
+  "data": {
+    "distributions": [
+      {
+        "name": "Project agent manifest",
+        "url": "https://dkharlanau.github.io/project-evidence-graph/agent-manifest.json",
+        "mediaType": "application/json",
+        "role": "other",
+        "description": "Source-backed project scope and local CLI entrypoints; this is not a hosted execution endpoint."
+      }
+    ]
+  }
+}
